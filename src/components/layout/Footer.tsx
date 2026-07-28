@@ -4,10 +4,10 @@ import { Mail, Phone, MapPin } from "lucide-react";
 
 const footerLinks = {
   company: [
-    { name: "About Us", href: "#about" },
-    { name: "How It Works", href: "#how-it-works" },
-    { name: "Services", href: "#services" },
-    { name: "Contact", href: "#contact" },
+    { name: "About Us", href: "/about" },
+    { name: "How It Works", href: "/how-it-works" },
+    { name: "Services", href: "/services" },
+    { name: "Contact", href: "/contact" },
   ],
   legal: [
     { name: "Terms of Service", href: "/terms" },

@@ -7,10 +7,10 @@ import { Menu, X } from "lucide-react";
 
 const navigation = [
   { name: "Home", href: "/" },
-  { name: "How It Works", href: "#how-it-works" },
-  { name: "Services", href: "#services" },
-  { name: "About", href: "#about" },
-  { name: "Contact", href: "#contact" },
+  { name: "How It Works", href: "/how-it-works" },
+  { name: "Services", href: "/services" },
+  { name: "About", href: "/about" },
+  { name: "Contact", href: "/contact" },
 ];
 
 export default function Header() {
