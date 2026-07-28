@@ -1,0 +1,102 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  firstName     String
+  lastName      String
+  phone         String?
+  role          String    @default("USER")
+  verified      Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  transactions  Transaction[]
+  sentMessages  Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+}
+
+model Transaction {
+  id              String    @id @default(cuid())
+  transactionId   String    @unique @default(cuid())
+  type            String
+  status          String    @default("PENDING")
+  amount          Float
+  currency        String    @default("USD")
+  description     String
+  buyerId         String
+  buyer           User      @relation(fields: [buyerId], references: [id])
+  sellerEmail     String
+  sellerName      String
+  escrowFee       Float
+  totalAmount     Float
+  releaseDate     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  documents       Document[]
+  messages        Message[]
+  timeline        TimelineEvent[]
+}
+
+model Document {
+  id            String      @id @default(cuid())
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  name          String
+  url           String
+  type          String
+  uploadedAt    DateTime    @default(now())
+}
+
+model Message {
+  id            String      @id @default(cuid())
+  transactionId String?
+  transaction   Transaction? @relation(fields: [transactionId], references: [id])
+  senderId      String
+  sender        User        @relation("SentMessages", fields: [senderId], references: [id])
+  receiverId    String
+  receiver      User        @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  content       String
+  read          Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+}
+
+model TimelineEvent {
+  id            String      @id @default(cuid())
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  event         String
+  description   String
+  createdAt     DateTime    @default(now())
+}
+
+model Testimonial {
+  id        String   @id @default(cuid())
+  name      String
+  role      String
+  company   String?
+  content   String
+  rating    Int      @default(5)
+  avatar    String?
+  featured  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model SiteSettings {
+  id              String  @id @default("settings")
+  companyName     String  @default("HoldVera")
+  tagline         String  @default("Trust. Secure. Delivered.")
+  email           String  @default("support@holdvera.site")
+  phone           String  @default("+1 (703) 555-0100")
+  address         String  @default("Arlington, Virginia, USA")
+  escrowFeePercent Float  @default(2.5)
+}
