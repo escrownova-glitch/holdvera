@@ -169,7 +169,7 @@ export default function TestimonialsPage() {
                   </div>
 
                   <div className="relative mb-6 flex-1">
-                    <Quote className="absolute -top-2 -left-2 w-8 h-8 text-[var(--gold)]/20" />
+                    <Quote className="absolute -top-1 -left-1 w-4 h-4 text-[var(--gold)]/30" />
                     <p className="text-gray-600 text-sm leading-relaxed pl-4">{t.content}</p>
                   </div>
 
