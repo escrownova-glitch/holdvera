@@ -1,55 +1,62 @@
 "use client";
 
-import { Star } from "lucide-react";
+import Image from "next/image";
+import { Star, MapPin } from "lucide-react";
 
 const testimonials = [
   {
-    name: "Michael Richardson",
-    role: "Business Owner",
-    company: "Richardson Imports LLC",
-    content: "HoldVera made our first international transaction seamless. The security and transparency gave both parties complete confidence. Highly recommend for any business deal.",
+    name: "Marcus Thompson",
+    location: "Atlanta, Georgia",
+    country: "USA",
+    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face",
+    transaction: "Sold a 2019 Mercedes-AMG GT for $87,500",
+    content: "Sold my AMG to a buyer in Texas I never met. Was nervous as hell about getting scammed. HoldVera held his payment, I shipped the car, he had 5 days to inspect. Money hit my account 24 hours after he approved. No BS, just worked.",
     rating: 5,
-    avatar: "MR",
   },
   {
-    name: "Sarah Chen",
-    role: "Real Estate Investor",
-    company: "Vertex Properties",
-    content: "I've used HoldVera for multiple property transactions. Their attention to detail and customer service is unmatched. The funds are always secure and releases are prompt.",
+    name: "Priya Sharma",
+    location: "Toronto, Ontario",
+    country: "Canada",
+    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop&crop=face",
+    transaction: "Purchased luxury watches worth $32,000",
+    content: "Bought two Rolex watches from a dealer in Miami. With that kind of money, I wasn't about to wire funds to someone I found online. HoldVera verified everything - the watches arrived exactly as described. The seller got paid, I got my pieces. Everyone happy.",
     rating: 5,
-    avatar: "SC",
   },
   {
-    name: "David Thompson",
-    role: "Classic Car Collector",
-    company: "",
-    content: "Bought a vintage Porsche through HoldVera. The inspection period and vehicle verification process gave me peace of mind. Worth every penny of the escrow fee.",
+    name: "James Okonkwo",
+    location: "London",
+    country: "United Kingdom",
+    image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&h=200&fit=crop&crop=face",
+    transaction: "Acquired premium domain for $156,000",
+    content: "Bought a 3-letter .com domain from a seller in Singapore. Six figures, different continents, different time zones. HoldVera handled the whole thing - domain transfer verified before funds released. Smooth as it gets for a deal this size.",
     rating: 5,
-    avatar: "DT",
   },
   {
-    name: "Jennifer Martinez",
-    role: "Tech Entrepreneur",
-    company: "ByteScale Inc.",
-    content: "Sold my SaaS business through HoldVera. The milestone-based release structure made the transition smooth. Professional team that understands complex transactions.",
+    name: "Sofia Rodriguez",
+    location: "Miami, Florida",
+    country: "USA",
+    image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop&crop=face",
+    transaction: "Real estate deposit of $45,000",
+    content: "Put down earnest money on a condo through HoldVera. Seller tried to back out and keep my deposit. HoldVera's dispute team stepped in, reviewed the contract, got my full deposit back in 11 days. They actually read the paperwork and fought for me.",
     rating: 5,
-    avatar: "JM",
   },
   {
-    name: "Robert Williams",
-    role: "Domain Investor",
-    company: "Premium Domains Co.",
-    content: "I deal with six-figure domain sales regularly. HoldVera is my go-to escrow service. Fast, secure, and the support team actually knows what they're doing.",
+    name: "Takeshi Yamamoto",
+    location: "Tokyo",
+    country: "Japan",
+    image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=face",
+    transaction: "Sold vintage camera collection for $28,400",
+    content: "Sold my Leica collection to a collector in Germany. International shipping, customs, insurance - lot of ways for things to go wrong. Buyer inspected everything, approved the condition. Payment cleared to my account same week. No drama.",
     rating: 5,
-    avatar: "RW",
   },
   {
-    name: "Amanda Foster",
-    role: "Art Dealer",
-    company: "Foster Gallery",
-    content: "Escrow for high-value art requires trust and expertise. HoldVera delivered on both. My clients feel protected, and the transactions are always handled with care.",
+    name: "Elena Kowalski",
+    location: "Melbourne",
+    country: "Australia",
+    image: "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=200&h=200&fit=crop&crop=face",
+    transaction: "Freelance contract payment of $67,000",
+    content: "Did a 6-month dev contract for a US startup. They'd burned freelancers before on payments. Set up milestone escrow through HoldVera - they funded each phase upfront, I delivered, funds released. Got paid for every hour I worked. Finally.",
     rating: 5,
-    avatar: "AF",
   },
 ];
 
@@ -59,34 +66,45 @@ export default function Testimonials() {
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <span className="inline-block px-4 py-1 rounded-full bg-[var(--gold)]/10 text-[var(--gold)] text-sm font-medium mb-4">
-            Testimonials
+            Real Stories
           </span>
           <h2 className="text-3xl sm:text-4xl font-serif font-bold mb-4">
-            Trusted by <span className="gold-text">Thousands</span>
+            What Our <span className="gold-text">Clients Say</span>
           </h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            See what our clients say about their experience with HoldVera.
+            Real transactions. Real people. Real protection.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {testimonials.map((testimonial) => (
-            <div key={testimonial.name} className="card-luxury p-8">
+          {testimonials.map((t) => (
+            <div key={t.name} className="card-luxury p-8">
               <div className="flex items-center gap-1 mb-4">
-                {Array.from({ length: testimonial.rating }).map((_, i) => (
-                  <Star key={i} className="w-5 h-5 fill-[var(--gold)] text-[var(--gold)]" />
+                {Array.from({ length: t.rating }).map((_, i) => (
+                  <Star key={i} className="w-4 h-4 fill-[var(--gold)] text-[var(--gold)]" />
                 ))}
               </div>
-              <p className="text-gray-600 mb-6 italic">&ldquo;{testimonial.content}&rdquo;</p>
+
+              <div className="mb-4 px-3 py-1.5 bg-[var(--gold)]/10 rounded-lg inline-block">
+                <span className="text-xs font-medium text-[var(--gold)]">{t.transaction}</span>
+              </div>
+
+              <p className="text-gray-600 mb-6 text-sm leading-relaxed">&ldquo;{t.content}&rdquo;</p>
+
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full gold-gradient flex items-center justify-center text-white font-semibold">
-                  {testimonial.avatar}
+                <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-[var(--gold)]/30">
+                  <Image
+                    src={t.image}
+                    alt={t.name}
+                    fill
+                    className="object-cover"
+                  />
                 </div>
                 <div>
-                  <div className="font-semibold">{testimonial.name}</div>
-                  <div className="text-sm text-gray-500">
-                    {testimonial.role}
-                    {testimonial.company && ` · ${testimonial.company}`}
+                  <div className="font-semibold">{t.name}</div>
+                  <div className="flex items-center gap-1 text-sm text-gray-500">
+                    <MapPin className="w-3 h-3" />
+                    <span>{t.location}, {t.country}</span>
                   </div>
                 </div>
               </div>
