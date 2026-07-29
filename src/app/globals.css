@@ -139,17 +139,40 @@ input:focus, textarea:focus, select:focus {
 
 .input-luxury {
   width: 100%;
-  padding: 0.875rem 1rem;
-  border: 1px solid #e5e5e5;
+  padding: 1rem 1rem;
+  padding-left: 2.75rem;
+  border: 2px solid #d1d5db;
   border-radius: 0.5rem;
   font-size: 1rem;
-  transition: all 0.3s ease;
-  background: white;
+  transition: all 0.2s ease;
+  background: #ffffff;
+  color: var(--black);
+  font-weight: 500;
+  height: 3.25rem;
+}
+
+.input-luxury::placeholder {
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+.input-luxury:hover {
+  border-color: #9ca3af;
 }
 
 .input-luxury:focus {
   border-color: var(--gold);
-  box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.1);
+  box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.15);
+  background: #fff;
+}
+
+.input-luxury:not(:placeholder-shown) {
+  border-color: #6b7280;
+}
+
+/* For inputs without icons */
+.input-luxury.no-icon {
+  padding-left: 1rem;
 }
 
 .bg-cream {
