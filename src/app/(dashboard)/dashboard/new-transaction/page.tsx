@@ -32,6 +32,9 @@ export default function NewTransactionPage() {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [step, setStep] = useState(1);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [transactionId, setTransactionId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     role: "",
     counterpartyEmail: "",
@@ -43,6 +46,33 @@ export default function NewTransactionPage() {
     inspectionDays: "3",
     terms: ""
   });
+
+  const handleCreateEscrow = async () => {
+    setSubmitting(true);
+
+    // Generate a transaction ID
+    const txId = `HV-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+
+    // Simulate API call (replace with real API later)
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // Store transaction locally for now
+    const transaction = {
+      id: txId,
+      ...formData,
+      status: "pending_acceptance",
+      createdAt: new Date().toISOString(),
+      createdBy: user?.email
+    };
+
+    const existingTransactions = JSON.parse(localStorage.getItem("holdvera_transactions") || "[]");
+    existingTransactions.push(transaction);
+    localStorage.setItem("holdvera_transactions", JSON.stringify(existingTransactions));
+
+    setTransactionId(txId);
+    setSubmitting(false);
+    setSubmitted(true);
+  };
 
   useEffect(() => {
     const storedUser = localStorage.getItem("holdvera_user");
@@ -436,37 +466,89 @@ export default function NewTransactionPage() {
             )}
 
             {/* Navigation Buttons */}
-            <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
-              <button
-                onClick={() => setStep(Math.max(1, step - 1))}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all ${
-                  step === 1
-                    ? "text-gray-300 cursor-not-allowed"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                }`}
-                disabled={step === 1}
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back
-              </button>
+            {!submitted && (
+              <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
+                <button
+                  onClick={() => setStep(Math.max(1, step - 1))}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all ${
+                    step === 1 || submitting
+                      ? "text-gray-300 cursor-not-allowed"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  }`}
+                  disabled={step === 1 || submitting}
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Back
+                </button>
 
-              {step < 4 ? (
-                <button
-                  onClick={() => setStep(Math.min(4, step + 1))}
-                  className="flex items-center gap-2 btn-gold px-6 py-2.5"
-                >
-                  Continue
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              ) : (
-                <button
-                  className="flex items-center gap-2 btn-gold px-6 py-2.5"
-                >
-                  <Shield className="w-4 h-4" />
-                  Create Escrow
-                </button>
-              )}
-            </div>
+                {step < 4 ? (
+                  <button
+                    onClick={() => setStep(Math.min(4, step + 1))}
+                    className="flex items-center gap-2 btn-gold px-6 py-2.5"
+                  >
+                    Continue
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleCreateEscrow}
+                    disabled={submitting}
+                    className="flex items-center gap-2 btn-gold px-6 py-2.5 disabled:opacity-50"
+                  >
+                    {submitting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <Shield className="w-4 h-4" />
+                        Create Escrow
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Success State */}
+            {submitted && (
+              <div className="text-center py-8">
+                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Check className="w-10 h-10 text-green-600" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Escrow Created!</h2>
+                <p className="text-gray-500 mb-2">Your transaction has been created successfully.</p>
+                <p className="text-sm text-gray-400 mb-6">Transaction ID: <span className="font-mono font-semibold text-gray-700">{transactionId}</span></p>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8 text-left max-w-md mx-auto">
+                  <div className="flex gap-3">
+                    <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-blue-900 font-medium">What&apos;s next?</p>
+                      <p className="text-sm text-blue-700">
+                        An invitation has been sent to {formData.counterpartyEmail}. Once they accept, the escrow will be active.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Link
+                    href="/dashboard/transactions"
+                    className="btn-gold px-6 py-2.5"
+                  >
+                    View Transactions
+                  </Link>
+                  <Link
+                    href="/dashboard"
+                    className="px-6 py-2.5 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    Back to Dashboard
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
         </main>
       </div>
