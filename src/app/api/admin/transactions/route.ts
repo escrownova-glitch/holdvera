@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db as prisma } from '@/lib/db';
-import { requireAdminOrAgent } from '@/lib/auth';
+import { requireAdminOrAgent, parseAgentPermissions } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
 
     // Check agent permissions
     if (admin.role === 'AGENT') {
-      const permissions = admin.agentPermissions ? JSON.parse(admin.agentPermissions) : {};
+      const permissions = parseAgentPermissions(admin.agentPermissions);
       if (!permissions.canViewTransactions) {
         return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
       }

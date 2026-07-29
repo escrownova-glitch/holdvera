@@ -61,3 +61,14 @@ export async function requireAdminOrCEO(request: NextRequest) {
   if (user.role !== 'ADMIN' && user.role !== 'CEO') return null;
   return user;
 }
+
+// Safe JSON parse for agent permissions
+export function parseAgentPermissions(permissions: string | null): Record<string, boolean> {
+  if (!permissions) return {};
+  try {
+    return JSON.parse(permissions);
+  } catch {
+    console.error('Invalid agent permissions JSON:', permissions);
+    return {};
+  }
+}

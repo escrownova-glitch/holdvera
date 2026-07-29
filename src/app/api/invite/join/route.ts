@@ -80,6 +80,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    // Check KYC status - must be approved to join transactions
+    if (acceptingUser.kycStatus !== 'APPROVED') {
+      return NextResponse.json(
+        {
+          error: 'KYC verification required',
+          requiresKYC: true,
+          kycStatus: acceptingUser.kycStatus,
+        },
+        { status: 403 }
+      );
+    }
+
     // Update transaction
     await prisma.transaction.update({
       where: { id: transaction.id },
@@ -100,13 +112,32 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Create welcome message
+    // Create system welcome message
+    const creatorRole = transaction.creatorRole === 'buyer' ? 'Buyer' : 'Seller';
+    const counterpartyRole = transaction.creatorRole === 'buyer' ? 'Seller' : 'Buyer';
+
     await prisma.message.create({
       data: {
         transactionId: transaction.id,
-        senderId: transaction.creatorId,
-        receiverId: user.userId,
-        content: `Welcome to the escrow transaction for "${transaction.title}". This chat is monitored by HoldVera support to ensure a safe transaction. Please communicate all transaction details here.`,
+        senderId: null,
+        receiverId: null,
+        isSystem: true,
+        content: `Welcome to your HoldVera Escrow Transaction!
+
+**Participants:**
+- ${transaction.creator.firstName} ${transaction.creator.lastName} (${creatorRole})
+- ${acceptingUser.firstName} ${acceptingUser.lastName} (${counterpartyRole})
+
+**Transaction Details:**
+- Title: ${transaction.title}
+- Amount: $${transaction.amount.toLocaleString()} ${transaction.currency}
+- Inspection Period: ${transaction.inspectionDays} days
+
+This chat is monitored by HoldVera support to ensure a safe and secure transaction. All communications regarding this escrow should take place here.
+
+Please coordinate the next steps and feel free to reach out if you have any questions!
+
+— HoldVera Team`,
       },
     });
 

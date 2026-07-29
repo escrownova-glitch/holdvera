@@ -53,11 +53,30 @@ export async function POST(request: NextRequest) {
       images, // array of base64 or URLs
     } = body;
 
+    // Validate required fields
+    if (!title || !description || !role || !counterpartyEmail || !counterpartyName || !amount) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // Validate amount
+    const amountNum = parseFloat(amount);
+    if (isNaN(amountNum) || amountNum <= 0) {
+      return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
+    }
+
+    if (amountNum > 10000000) {
+      return NextResponse.json({ error: 'Amount exceeds maximum limit' }, { status: 400 });
+    }
+
+    // Validate role
+    if (role !== 'buyer' && role !== 'seller') {
+      return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
+    }
+
     // Generate transaction ID
     const transactionId = `HV-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
     // Calculate fees
-    const amountNum = parseFloat(amount);
     const escrowFee = amountNum * 0.029;
     const totalAmount = amountNum + escrowFee;
 
