@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -14,16 +15,22 @@ model User {
   firstName     String
   lastName      String
   phone         String?
-  role          String    @default("USER")  // USER, ADMIN, CEO
+  role          String    @default("USER")  // USER, AGENT, ADMIN, CEO
   verified      Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
   // Signup tracking
-  signupMethod  String    @default("WEBSITE")  // WEBSITE, INVITE
-  invitedBy     String?   // Transaction ID if joined via invite
+  signupMethod  String    @default("WEBSITE")  // WEBSITE, INVITE, AGENT_INVITE
+  invitedBy     String?   // Transaction ID or Admin ID if invited
   ipAddress     String?
   userAgent     String?
+
+  // Agent permissions (for AGENT role)
+  agentPermissions String?   // JSON: {"canViewUsers":true,"canApproveKYC":false,...}
+  agentInvitedBy   String?   // CEO/Admin who invited this agent
+  agentInviteToken String?   @unique
+  agentStatus      String?   @default("ACTIVE") // ACTIVE, SUSPENDED, REVOKED
 
   // KYC fields
   kycStatus     String    @default("PENDING")  // PENDING, SUBMITTED, APPROVED, REJECTED

@@ -21,7 +21,11 @@ import {
   UserX,
   Eye,
   MessageSquare,
-  Shield
+  Shield,
+  UserPlus,
+  Copy,
+  Trash2,
+  Edit
 } from "lucide-react";
 
 interface User {
@@ -44,7 +48,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [recentUsers, setRecentUsers] = useState<any[]>([]);
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<"overview" | "users" | "transactions" | "kyc">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "users" | "transactions" | "kyc" | "agents">("overview");
 
   useEffect(() => {
     checkAuth();
@@ -60,7 +64,7 @@ export default function AdminDashboard() {
     }
 
     const userData = JSON.parse(storedUser);
-    if (userData.role !== "CEO" && userData.role !== "ADMIN") {
+    if (userData.role !== "CEO" && userData.role !== "ADMIN" && userData.role !== "AGENT") {
       router.push("/dashboard");
       return;
     }
@@ -136,6 +140,7 @@ export default function AdminDashboard() {
               { label: "Users", icon: Users, tab: "users" as const },
               { label: "Transactions", icon: FileText, tab: "transactions" as const },
               { label: "KYC Reviews", icon: UserCheck, tab: "kyc" as const },
+              ...(user?.role === "CEO" ? [{ label: "Agents", icon: UserPlus, tab: "agents" as const }] : []),
             ].map((item) => (
               <button
                 key={item.tab}
@@ -188,6 +193,7 @@ export default function AdminDashboard() {
               {activeTab === "users" && "User Management"}
               {activeTab === "transactions" && "Transactions"}
               {activeTab === "kyc" && "KYC Reviews"}
+              {activeTab === "agents" && "Agent Management"}
             </h1>
             <div className="flex items-center gap-3">
               <button className="relative p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
@@ -351,6 +357,11 @@ export default function AdminDashboard() {
           {/* KYC Tab */}
           {activeTab === "kyc" && (
             <KYCTab />
+          )}
+
+          {/* Agents Tab */}
+          {activeTab === "agents" && user?.role === "CEO" && (
+            <AgentsTab />
           )}
         </main>
       </div>
@@ -723,6 +734,318 @@ function KYCTab() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function AgentsTab() {
+  const [agents, setAgents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteForm, setInviteForm] = useState({ email: "", firstName: "", lastName: "" });
+  const [permissions, setPermissions] = useState({
+    canViewUsers: true,
+    canViewTransactions: true,
+    canApproveKYC: false,
+    canRejectKYC: false,
+    canCompleteTransactions: false,
+    canCancelTransactions: false,
+    canSendMessages: true,
+    canViewChat: true,
+  });
+  const [inviting, setInviting] = useState(false);
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    fetchAgents();
+  }, []);
+
+  const fetchAgents = async () => {
+    const token = localStorage.getItem("holdvera_token");
+    const res = await fetch("/api/admin/agents", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    setAgents(data.agents || []);
+    setLoading(false);
+  };
+
+  const handleInvite = async () => {
+    if (!inviteForm.email || !inviteForm.firstName || !inviteForm.lastName) {
+      alert("Please fill all fields");
+      return;
+    }
+
+    setInviting(true);
+    const token = localStorage.getItem("holdvera_token");
+
+    const res = await fetch("/api/admin/agents", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ ...inviteForm, permissions }),
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      setInviteLink(data.agent.inviteLink);
+      await fetchAgents();
+    } else {
+      alert(data.error || "Failed to invite agent");
+    }
+
+    setInviting(false);
+  };
+
+  const handleStatusChange = async (agentId: string, status: string) => {
+    const token = localStorage.getItem("holdvera_token");
+    await fetch(`/api/admin/agents/${agentId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ status }),
+    });
+    await fetchAgents();
+  };
+
+  const copyLink = () => {
+    if (inviteLink) {
+      navigator.clipboard.writeText(inviteLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const closeModal = () => {
+    setShowInviteModal(false);
+    setInviteForm({ email: "", firstName: "", lastName: "" });
+    setInviteLink(null);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-white">Agent Management</h2>
+          <p className="text-gray-400 text-sm">Invite and manage sub-agents with limited permissions</p>
+        </div>
+        <button
+          onClick={() => setShowInviteModal(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-[var(--gold)] hover:bg-[var(--gold-dark)] text-white rounded-lg font-medium"
+        >
+          <UserPlus className="w-4 h-4" />
+          Invite Agent
+        </button>
+      </div>
+
+      {/* Agents List */}
+      <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-gray-700">
+              <th className="text-left p-4 text-gray-400 font-medium text-sm">Agent</th>
+              <th className="text-left p-4 text-gray-400 font-medium text-sm">Permissions</th>
+              <th className="text-left p-4 text-gray-400 font-medium text-sm">Status</th>
+              <th className="text-left p-4 text-gray-400 font-medium text-sm">Joined</th>
+              <th className="text-left p-4 text-gray-400 font-medium text-sm">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-700">
+            {agents.map((agent) => (
+              <tr key={agent.id} className="hover:bg-gray-700/50">
+                <td className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-[var(--gold)] flex items-center justify-center text-white font-bold">
+                      {agent.firstName?.[0]}
+                    </div>
+                    <div>
+                      <p className="text-white font-medium">{agent.firstName} {agent.lastName}</p>
+                      <p className="text-gray-500 text-sm">{agent.email}</p>
+                    </div>
+                  </div>
+                </td>
+                <td className="p-4">
+                  <div className="flex flex-wrap gap-1">
+                    {agent.permissions?.canViewUsers && <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs rounded">Users</span>}
+                    {agent.permissions?.canViewTransactions && <span className="px-2 py-0.5 bg-purple-500/20 text-purple-400 text-xs rounded">Txns</span>}
+                    {agent.permissions?.canApproveKYC && <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs rounded">KYC</span>}
+                    {agent.permissions?.canSendMessages && <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 text-xs rounded">Chat</span>}
+                  </div>
+                </td>
+                <td className="p-4">
+                  <span className={`px-2 py-1 rounded text-xs font-medium ${
+                    agent.agentStatus === "ACTIVE" ? "bg-green-500/20 text-green-400" :
+                    agent.agentStatus === "PENDING" ? "bg-amber-500/20 text-amber-400" :
+                    agent.agentStatus === "SUSPENDED" ? "bg-red-500/20 text-red-400" :
+                    "bg-gray-600 text-gray-300"
+                  }`}>
+                    {agent.agentStatus}
+                  </span>
+                </td>
+                <td className="p-4 text-gray-400 text-sm">
+                  {new Date(agent.createdAt).toLocaleDateString()}
+                </td>
+                <td className="p-4">
+                  <div className="flex items-center gap-2">
+                    {agent.agentStatus === "ACTIVE" && (
+                      <button
+                        onClick={() => handleStatusChange(agent.id, "SUSPENDED")}
+                        className="text-amber-400 hover:text-amber-300 text-sm"
+                      >
+                        Suspend
+                      </button>
+                    )}
+                    {agent.agentStatus === "SUSPENDED" && (
+                      <button
+                        onClick={() => handleStatusChange(agent.id, "ACTIVE")}
+                        className="text-green-400 hover:text-green-300 text-sm"
+                      >
+                        Activate
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleStatusChange(agent.id, "REVOKED")}
+                      className="text-red-400 hover:text-red-300 text-sm"
+                    >
+                      Revoke
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {agents.length === 0 && !loading && (
+          <div className="text-center py-12">
+            <UserPlus className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-white mb-2">No agents yet</h3>
+            <p className="text-gray-400">Invite your first agent to help manage HoldVera.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Invite Modal */}
+      {showInviteModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-2xl border border-gray-700 w-full max-w-lg p-6">
+            {!inviteLink ? (
+              <>
+                <h3 className="text-xl font-semibold text-white mb-6">Invite New Agent</h3>
+
+                <div className="space-y-4 mb-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">First Name</label>
+                      <input
+                        type="text"
+                        value={inviteForm.firstName}
+                        onChange={(e) => setInviteForm({ ...inviteForm, firstName: e.target.value })}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">Last Name</label>
+                      <input
+                        type="text"
+                        value={inviteForm.lastName}
+                        onChange={(e) => setInviteForm({ ...inviteForm, lastName: e.target.value })}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">Email Address</label>
+                    <input
+                      type="email"
+                      value={inviteForm.email}
+                      onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-300 mb-3">Permissions</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {Object.entries(permissions).map(([key, value]) => (
+                      <label key={key} className="flex items-center gap-2 p-2 bg-gray-700/50 rounded-lg cursor-pointer hover:bg-gray-700">
+                        <input
+                          type="checkbox"
+                          checked={value}
+                          onChange={(e) => setPermissions({ ...permissions, [key]: e.target.checked })}
+                          className="w-4 h-4 rounded border-gray-600 text-[var(--gold)] focus:ring-[var(--gold)]"
+                        />
+                        <span className="text-sm text-gray-300">
+                          {key.replace(/([A-Z])/g, ' $1').replace('can ', '')}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={closeModal}
+                    className="flex-1 px-4 py-2 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-700"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleInvite}
+                    disabled={inviting}
+                    className="flex-1 px-4 py-2 bg-[var(--gold)] text-white rounded-lg hover:bg-[var(--gold-dark)] disabled:opacity-50"
+                  >
+                    {inviting ? "Sending..." : "Send Invitation"}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle className="w-8 h-8 text-green-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-white mb-2">Invitation Sent!</h3>
+                  <p className="text-gray-400 text-sm">An email has been sent to {inviteForm.email}</p>
+                </div>
+
+                <div className="bg-gray-700/50 rounded-lg p-4 mb-6">
+                  <p className="text-gray-400 text-xs mb-2">Or share this link directly:</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={inviteLink}
+                      className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm font-mono"
+                    />
+                    <button
+                      onClick={copyLink}
+                      className={`px-3 py-2 rounded-lg font-medium text-sm ${copied ? "bg-green-500 text-white" : "bg-[var(--gold)] text-white"}`}
+                    >
+                      {copied ? "Copied!" : "Copy"}
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  onClick={closeModal}
+                  className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600"
+                >
+                  Done
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
