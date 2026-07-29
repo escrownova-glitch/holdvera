@@ -30,6 +30,7 @@ interface UserDetail {
   phone: string | null;
   role: string;
   verified: boolean;
+  emailVerified: boolean;
   createdAt: string;
   signupMethod: string;
   kycStatus: string;
