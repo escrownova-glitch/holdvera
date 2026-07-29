@@ -4,7 +4,8 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
 const SESSION_CHECK_INTERVAL = 60 * 1000; // Check every minute
-const ACTIVITY_EVENTS = ['mousedown', 'keydown', 'scroll', 'touchstart'];
+const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutes of inactivity
+const ACTIVITY_EVENTS = ['mousedown', 'keydown', 'scroll', 'touchstart', 'mousemove'];
 
 export function useSession() {
   const router = useRouter();
@@ -13,12 +14,30 @@ export function useSession() {
 
   const updateActivity = useCallback(() => {
     lastActivityRef.current = Date.now();
+    // Store last activity in localStorage for cross-tab sync
+    localStorage.setItem('holdvera_last_activity', String(Date.now()));
   }, []);
+
+  const logout = useCallback(() => {
+    localStorage.removeItem('holdvera_token');
+    localStorage.removeItem('holdvera_user');
+    localStorage.removeItem('holdvera_last_activity');
+    router.push('/login?expired=true');
+  }, [router]);
 
   const checkSession = useCallback(async () => {
     const token = localStorage.getItem('holdvera_token');
     if (!token) {
       router.push('/login');
+      return;
+    }
+
+    // Check for inactivity timeout
+    const lastActivity = parseInt(localStorage.getItem('holdvera_last_activity') || String(Date.now()));
+    const timeSinceActivity = Date.now() - lastActivity;
+
+    if (timeSinceActivity >= INACTIVITY_TIMEOUT) {
+      logout();
       return;
     }
 
@@ -33,9 +52,7 @@ export function useSession() {
       const data = await res.json();
 
       if (!res.ok || data.sessionExpired) {
-        localStorage.removeItem('holdvera_token');
-        localStorage.removeItem('holdvera_user');
-        router.push('/login?expired=true');
+        logout();
         return;
       }
 
@@ -49,7 +66,7 @@ export function useSession() {
     } catch {
       // Network error, don't log out
     }
-  }, [router]);
+  }, [router, logout]);
 
   useEffect(() => {
     // Add activity listeners

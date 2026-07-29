@@ -16,10 +16,12 @@ import {
   MessageSquare,
   Shield,
   AlertCircle,
+  AlertTriangle,
   Image as ImageIcon,
   Upload,
   Eye,
-  File
+  File,
+  RefreshCw
 } from "lucide-react";
 
 interface Transaction {
@@ -177,9 +179,43 @@ export default function AdminTransactionDetail() {
     setSending(false);
   };
 
-  const handleAction = async (action: "complete" | "cancel") => {
-    const reason = action === "cancel" ? prompt("Enter cancellation reason:") : null;
-    if (action === "cancel" && !reason) return;
+  const handleAction = async (action: string) => {
+    let reason: string | null = null;
+    let refundBuyer = false;
+
+    if (action === "cancel") {
+      reason = prompt("Enter cancellation reason:");
+      if (!reason) return;
+    }
+
+    if (action === "open_dispute") {
+      reason = prompt("Enter dispute reason:");
+      if (!reason) return;
+    }
+
+    if (action === "resolve_dispute_seller") {
+      const confirmed = confirm("Are you sure you want to release funds to the seller?");
+      if (!confirmed) return;
+      action = "resolve_dispute";
+      refundBuyer = false;
+    }
+
+    if (action === "resolve_dispute_buyer") {
+      const confirmed = confirm("Are you sure you want to refund the buyer?");
+      if (!confirmed) return;
+      action = "resolve_dispute";
+      refundBuyer = true;
+    }
+
+    if (action === "mark_funded") {
+      const confirmed = confirm("Confirm that the buyer has paid the invoice and funds have been received?");
+      if (!confirmed) return;
+    }
+
+    if (action === "release_funds") {
+      const confirmed = confirm("Are you sure you want to release funds to the seller? This cannot be undone.");
+      if (!confirmed) return;
+    }
 
     setActionLoading(true);
     const token = localStorage.getItem("holdvera_token");
@@ -190,7 +226,7 @@ export default function AdminTransactionDetail() {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ action, reason }),
+      body: JSON.stringify({ action, reason, refundBuyer }),
     });
 
     await fetchTransaction();
@@ -216,8 +252,10 @@ export default function AdminTransactionDetail() {
   const statusColors: Record<string, string> = {
     PENDING_ACCEPTANCE: "bg-amber-500/20 text-amber-400",
     ACTIVE: "bg-blue-500/20 text-blue-400",
+    FUNDED: "bg-emerald-500/20 text-emerald-400",
     COMPLETED: "bg-green-500/20 text-green-400",
     CANCELLED: "bg-red-500/20 text-red-400",
+    DISPUTED: "bg-orange-500/20 text-orange-400",
   };
 
   return (
@@ -238,15 +276,24 @@ export default function AdminTransactionDetail() {
             <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[transaction.status] || "bg-gray-600 text-gray-300"}`}>
               {transaction.status.replace("_", " ")}
             </span>
+            {/* Payment Control Buttons */}
             {transaction.status === "ACTIVE" && (
               <>
                 <button
-                  onClick={() => handleAction("complete")}
+                  onClick={() => handleAction("mark_funded")}
                   disabled={actionLoading}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium disabled:opacity-50"
+                  className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium disabled:opacity-50"
                 >
-                  <CheckCircle className="w-4 h-4" />
-                  Complete
+                  <DollarSign className="w-4 h-4" />
+                  Mark Funded
+                </button>
+                <button
+                  onClick={() => handleAction("open_dispute")}
+                  disabled={actionLoading}
+                  className="flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium disabled:opacity-50"
+                >
+                  <AlertTriangle className="w-4 h-4" />
+                  Dispute
                 </button>
                 <button
                   onClick={() => handleAction("cancel")}
@@ -255,6 +302,46 @@ export default function AdminTransactionDetail() {
                 >
                   <XCircle className="w-4 h-4" />
                   Cancel
+                </button>
+              </>
+            )}
+            {transaction.status === "FUNDED" && (
+              <>
+                <button
+                  onClick={() => handleAction("release_funds")}
+                  disabled={actionLoading}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium disabled:opacity-50"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  Release Funds
+                </button>
+                <button
+                  onClick={() => handleAction("open_dispute")}
+                  disabled={actionLoading}
+                  className="flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium disabled:opacity-50"
+                >
+                  <AlertTriangle className="w-4 h-4" />
+                  Dispute
+                </button>
+              </>
+            )}
+            {transaction.status === "DISPUTED" && (
+              <>
+                <button
+                  onClick={() => handleAction("resolve_dispute_seller")}
+                  disabled={actionLoading}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium disabled:opacity-50"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  Release to Seller
+                </button>
+                <button
+                  onClick={() => handleAction("resolve_dispute_buyer")}
+                  disabled={actionLoading}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-50"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Refund Buyer
                 </button>
               </>
             )}

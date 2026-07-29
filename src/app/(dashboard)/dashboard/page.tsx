@@ -29,6 +29,22 @@ interface User {
   email: string;
 }
 
+interface Stats {
+  total: number;
+  active: number;
+  completed: number;
+  totalValue: number;
+}
+
+interface Transaction {
+  id: string;
+  title: string;
+  amount: number;
+  status: string;
+  createdAt: string;
+  counterpartyName?: string;
+}
+
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,13 +54,50 @@ export default function DashboardPage() {
   const [joinLoading, setJoinLoading] = useState(false);
   const [joinError, setJoinError] = useState("");
   const [joinSuccess, setJoinSuccess] = useState<{id: string; title: string} | null>(null);
+  const [stats, setStats] = useState<Stats>({ total: 0, active: 0, completed: 0, totalValue: 0 });
+  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("holdvera_user");
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
-    setLoading(false);
+
+    // Fetch dashboard stats and recent transactions
+    const fetchDashboardData = async () => {
+      const token = localStorage.getItem("holdvera_token");
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/transactions", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const transactions = data.transactions || [];
+
+          // Calculate stats
+          const total = transactions.length;
+          const active = transactions.filter((t: Transaction) =>
+            ["PENDING_ACCEPTANCE", "ACTIVE", "FUNDED"].includes(t.status)
+          ).length;
+          const completed = transactions.filter((t: Transaction) => t.status === "COMPLETED").length;
+          const totalValue = transactions.reduce((sum: number, t: Transaction) => sum + t.amount, 0);
+
+          setStats({ total, active, completed, totalValue });
+          setRecentTransactions(transactions.slice(0, 5));
+        }
+      } catch {
+        // Silently fail, show zeros
+      }
+
+      setLoading(false);
+    };
+
+    fetchDashboardData();
   }, []);
 
   const handleLogout = () => {
@@ -96,11 +149,11 @@ export default function DashboardPage() {
     );
   }
 
-  const stats = [
-    { label: "Total Transactions", value: "0", icon: FileText, color: "bg-blue-500" },
-    { label: "Active Escrows", value: "0", icon: Clock, color: "bg-amber-500" },
-    { label: "Completed", value: "0", icon: CheckCircle, color: "bg-green-500" },
-    { label: "Total Value", value: "$0.00", icon: DollarSign, color: "bg-purple-500" },
+  const statCards = [
+    { label: "Total Transactions", value: stats.total.toString(), icon: FileText, color: "bg-blue-500" },
+    { label: "Active Escrows", value: stats.active.toString(), icon: Clock, color: "bg-amber-500" },
+    { label: "Completed", value: stats.completed.toString(), icon: CheckCircle, color: "bg-green-500" },
+    { label: "Total Value", value: `$${stats.totalValue.toLocaleString()}`, icon: DollarSign, color: "bg-purple-500" },
   ];
 
   const quickActions = [
@@ -223,7 +276,7 @@ export default function DashboardPage() {
 
           {/* Stats Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {stats.map((stat) => (
+            {statCards.map((stat) => (
               <div key={stat.label} className="bg-white rounded-xl border border-gray-200 p-5">
                 <div className="flex items-center gap-3 mb-3">
                   <div className={`w-10 h-10 ${stat.color} rounded-lg flex items-center justify-center`}>
@@ -290,20 +343,60 @@ export default function DashboardPage() {
                 View All
               </Link>
             </div>
-            <div className="p-8 text-center">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FileText className="w-8 h-8 text-gray-400" />
+            {recentTransactions.length > 0 ? (
+              <div className="divide-y divide-gray-100">
+                {recentTransactions.map((txn) => {
+                  const statusColors: Record<string, string> = {
+                    PENDING_ACCEPTANCE: "bg-amber-100 text-amber-700",
+                    ACTIVE: "bg-blue-100 text-blue-700",
+                    FUNDED: "bg-emerald-100 text-emerald-700",
+                    COMPLETED: "bg-green-100 text-green-700",
+                    CANCELLED: "bg-red-100 text-red-700",
+                    DISPUTED: "bg-orange-100 text-orange-700",
+                  };
+                  return (
+                    <Link
+                      key={txn.id}
+                      href={`/dashboard/transactions/${txn.id}`}
+                      className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                          <FileText className="w-5 h-5 text-gray-500" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">{txn.title}</p>
+                          <p className="text-sm text-gray-500">
+                            {txn.counterpartyName && `with ${txn.counterpartyName}`}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-gray-900">${txn.amount.toLocaleString()}</p>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${statusColors[txn.status] || "bg-gray-100 text-gray-600"}`}>
+                          {txn.status.replace("_", " ")}
+                        </span>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
-              <h4 className="text-lg font-semibold text-gray-900 mb-1">No transactions yet</h4>
-              <p className="text-gray-500 mb-4">Start your first secure escrow transaction</p>
-              <Link
-                href="/dashboard/new-transaction"
-                className="inline-flex items-center gap-2 btn-gold py-2.5 px-5"
-              >
-                <PlusCircle className="w-4 h-4" />
-                Create Transaction
-              </Link>
-            </div>
+            ) : (
+              <div className="p-8 text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FileText className="w-8 h-8 text-gray-400" />
+                </div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-1">No transactions yet</h4>
+                <p className="text-gray-500 mb-4">Start your first secure escrow transaction</p>
+                <Link
+                  href="/dashboard/new-transaction"
+                  className="inline-flex items-center gap-2 btn-gold py-2.5 px-5"
+                >
+                  <PlusCircle className="w-4 h-4" />
+                  Create Transaction
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Security Notice */}

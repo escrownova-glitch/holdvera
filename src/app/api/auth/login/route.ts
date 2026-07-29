@@ -3,8 +3,63 @@ import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
+// Simple in-memory rate limiter
+const loginAttempts = new Map<string, { count: number; lastAttempt: number }>();
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes
+
+function checkRateLimit(ip: string): { allowed: boolean; remainingTime?: number } {
+  const now = Date.now();
+  const record = loginAttempts.get(ip);
+
+  if (!record) {
+    return { allowed: true };
+  }
+
+  // Reset if lockout period has passed
+  if (now - record.lastAttempt > LOCKOUT_DURATION) {
+    loginAttempts.delete(ip);
+    return { allowed: true };
+  }
+
+  if (record.count >= MAX_ATTEMPTS) {
+    const remainingTime = Math.ceil((LOCKOUT_DURATION - (now - record.lastAttempt)) / 1000 / 60);
+    return { allowed: false, remainingTime };
+  }
+
+  return { allowed: true };
+}
+
+function recordFailedAttempt(ip: string) {
+  const record = loginAttempts.get(ip);
+  if (record) {
+    record.count++;
+    record.lastAttempt = Date.now();
+  } else {
+    loginAttempts.set(ip, { count: 1, lastAttempt: Date.now() });
+  }
+}
+
+function clearAttempts(ip: string) {
+  loginAttempts.delete(ip);
+}
+
 export async function POST(request: NextRequest) {
   try {
+    // Get IP for rate limiting
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ||
+               request.headers.get('x-real-ip') ||
+               'unknown';
+
+    // Check rate limit
+    const rateCheck = checkRateLimit(ip);
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { error: `Too many login attempts. Please try again in ${rateCheck.remainingTime} minutes.` },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const { email, password } = body;
 
@@ -20,6 +75,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
+      recordFailedAttempt(ip);
       return NextResponse.json(
         { error: "Invalid credentials" },
         { status: 401 }
@@ -29,11 +85,15 @@ export async function POST(request: NextRequest) {
     const validPassword = await bcrypt.compare(password, user.password);
 
     if (!validPassword) {
+      recordFailedAttempt(ip);
       return NextResponse.json(
         { error: "Invalid credentials" },
         { status: 401 }
       );
     }
+
+    // Clear rate limit on successful login
+    clearAttempts(ip);
 
     // Check if email is verified (only for regular users)
     if (user.role === "USER" && !user.emailVerified) {
