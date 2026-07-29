@@ -48,6 +48,7 @@ export async function GET(
         counterpartyName: transaction.counterpartyName,
         counterpartyEmail: transaction.counterpartyEmail,
         images: transaction.images,
+        inviteCode: (transaction as any).inviteCode,
       },
     });
   } catch (error) {

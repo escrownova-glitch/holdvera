@@ -102,6 +102,7 @@ model Transaction {
 
   // Invite
   inviteToken     String    @unique @default(cuid())
+  inviteCode      String?   @unique // Short 8-char code for manual entry (nullable for existing records)
   inviteAccepted  Boolean   @default(false)
   inviteAcceptedAt DateTime?
 

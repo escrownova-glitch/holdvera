@@ -73,7 +73,7 @@ export default function InvitePage() {
   const handleAccept = async () => {
     if (!isLoggedIn) {
       localStorage.setItem("holdvera_invite_redirect", params.token as string);
-      router.push("/register");
+      router.push(`/register?invite=${params.token}`);
       return;
     }
 

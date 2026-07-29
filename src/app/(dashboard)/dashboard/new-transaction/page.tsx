@@ -39,7 +39,9 @@ export default function NewTransactionPage() {
   const [submitted, setSubmitted] = useState(false);
   const [transactionId, setTransactionId] = useState<string | null>(null);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
   const [formData, setFormData] = useState({
     role: "",
     counterpartyEmail: "",
@@ -99,6 +101,7 @@ export default function NewTransactionPage() {
 
       setTransactionId(data.transaction.transactionId);
       setInviteLink(data.transaction.inviteLink);
+      setInviteCode(data.transaction.inviteCode);
       setSubmitted(true);
     } catch (error) {
       console.error("Create escrow error:", error);
@@ -113,6 +116,14 @@ export default function NewTransactionPage() {
       navigator.clipboard.writeText(inviteLink);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const copyInviteCode = () => {
+    if (inviteCode) {
+      navigator.clipboard.writeText(inviteCode);
+      setCodeCopied(true);
+      setTimeout(() => setCodeCopied(false), 2000);
     }
   };
 
@@ -643,9 +654,32 @@ export default function NewTransactionPage() {
                   </div>
                 </div>
 
+                {/* Invite Code Box */}
+                {inviteCode && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4 max-w-lg mx-auto">
+                    <p className="text-sm text-amber-800 mb-2 text-left font-medium">Share this invite code:</p>
+                    <div className="flex gap-2 items-center">
+                      <div className="flex-1 px-4 py-3 bg-white border-2 border-amber-300 rounded-lg text-center">
+                        <span className="text-2xl font-mono font-bold tracking-widest text-gray-800">{inviteCode}</span>
+                      </div>
+                      <button
+                        onClick={copyInviteCode}
+                        className={`px-4 py-3 rounded-lg font-medium text-sm transition-all ${
+                          codeCopied
+                            ? "bg-green-500 text-white"
+                            : "bg-amber-500 text-white hover:bg-amber-600"
+                        }`}
+                      >
+                        {codeCopied ? "Copied!" : "Copy"}
+                      </button>
+                    </div>
+                    <p className="text-xs text-amber-600 mt-2 text-left">The other party can enter this code from their dashboard to join.</p>
+                  </div>
+                )}
+
                 {/* Invite Link Box */}
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6 max-w-lg mx-auto">
-                  <p className="text-sm text-gray-600 mb-2 text-left font-medium">Or share this invite link manually:</p>
+                  <p className="text-sm text-gray-600 mb-2 text-left font-medium">Or share the full invite link:</p>
                   <div className="flex gap-2">
                     <input
                       type="text"

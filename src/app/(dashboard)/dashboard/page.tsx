@@ -18,7 +18,9 @@ import {
   DollarSign,
   Shield,
   Menu,
-  X
+  X,
+  UserPlus,
+  Ticket
 } from "lucide-react";
 
 interface User {
@@ -31,6 +33,11 @@ export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [inviteCode, setInviteCode] = useState("");
+  const [joinLoading, setJoinLoading] = useState(false);
+  const [joinError, setJoinError] = useState("");
+  const [joinSuccess, setJoinSuccess] = useState<{id: string; title: string} | null>(null);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("holdvera_user");
@@ -44,6 +51,41 @@ export default function DashboardPage() {
     localStorage.removeItem("holdvera_user");
     localStorage.removeItem("holdvera_token");
     window.location.href = "/login";
+  };
+
+  const handleJoinTransaction = async () => {
+    if (!inviteCode.trim()) {
+      setJoinError("Please enter an invite code");
+      return;
+    }
+
+    setJoinLoading(true);
+    setJoinError("");
+
+    try {
+      const token = localStorage.getItem("holdvera_token");
+      const res = await fetch("/api/invite/join", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ code: inviteCode.trim() }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setJoinError(data.error || "Failed to join transaction");
+        return;
+      }
+
+      setJoinSuccess({ id: data.transactionId, title: data.title });
+    } catch {
+      setJoinError("Something went wrong. Please try again.");
+    } finally {
+      setJoinLoading(false);
+    }
   };
 
   if (loading) {
@@ -63,8 +105,8 @@ export default function DashboardPage() {
 
   const quickActions = [
     { label: "New Transaction", icon: PlusCircle, href: "/dashboard/new-transaction", primary: true },
+    { label: "Join Transaction", icon: UserPlus, onClick: () => setShowJoinModal(true) },
     { label: "View All", icon: FileText, href: "/dashboard/transactions" },
-    { label: "Settings", icon: Settings, href: "/dashboard/settings" },
   ];
 
   return (
@@ -198,25 +240,45 @@ export default function DashboardPage() {
           <div className="mb-8">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {quickActions.map((action) => (
-                <Link
-                  key={action.label}
-                  href={action.href}
-                  className={`
-                    flex items-center justify-between p-4 rounded-xl border transition-all
-                    ${action.primary
-                      ? "bg-[var(--gold)] text-white border-[var(--gold)] hover:bg-[var(--gold-dark)]"
-                      : "bg-white text-gray-700 border-gray-200 hover:border-[var(--gold)] hover:shadow-md"
-                    }
-                  `}
-                >
-                  <div className="flex items-center gap-3">
-                    <action.icon className="w-5 h-5" />
-                    <span className="font-semibold">{action.label}</span>
-                  </div>
-                  <ChevronRight className="w-5 h-5" />
-                </Link>
-              ))}
+              {quickActions.map((action) => {
+                const className = `
+                  flex items-center justify-between p-4 rounded-xl border transition-all cursor-pointer
+                  ${action.primary
+                    ? "bg-[var(--gold)] text-white border-[var(--gold)] hover:bg-[var(--gold-dark)]"
+                    : "bg-white text-gray-700 border-gray-200 hover:border-[var(--gold)] hover:shadow-md"
+                  }
+                `;
+
+                if (action.onClick) {
+                  return (
+                    <button
+                      key={action.label}
+                      onClick={action.onClick}
+                      className={className}
+                    >
+                      <div className="flex items-center gap-3">
+                        <action.icon className="w-5 h-5" />
+                        <span className="font-semibold">{action.label}</span>
+                      </div>
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  );
+                }
+
+                return (
+                  <Link
+                    key={action.label}
+                    href={action.href!}
+                    className={className}
+                  >
+                    <div className="flex items-center gap-3">
+                      <action.icon className="w-5 h-5" />
+                      <span className="font-semibold">{action.label}</span>
+                    </div>
+                    <ChevronRight className="w-5 h-5" />
+                  </Link>
+                );
+              })}
             </div>
           </div>
 
@@ -260,6 +322,101 @@ export default function DashboardPage() {
           </div>
         </main>
       </div>
+
+      {/* Join Transaction Modal */}
+      {showJoinModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-5 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-[var(--gold)]/10 rounded-lg flex items-center justify-center">
+                  <Ticket className="w-5 h-5 text-[var(--gold)]" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">Join Transaction</h3>
+              </div>
+              <button
+                onClick={() => {
+                  setShowJoinModal(false);
+                  setInviteCode("");
+                  setJoinError("");
+                  setJoinSuccess(null);
+                }}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-5">
+              {joinSuccess ? (
+                <div className="text-center py-4">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle className="w-8 h-8 text-green-600" />
+                  </div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Successfully Joined!</h4>
+                  <p className="text-gray-500 mb-4">You've joined "{joinSuccess.title}"</p>
+                  <Link
+                    href={`/dashboard/transactions/${joinSuccess.id}`}
+                    className="btn-gold px-6 py-2.5 inline-block"
+                  >
+                    View Transaction
+                  </Link>
+                </div>
+              ) : (
+                <>
+                  <p className="text-gray-500 text-sm mb-4">
+                    Enter the invite code you received from the transaction creator.
+                  </p>
+
+                  {joinError && (
+                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                      <p className="text-red-700 text-sm">{joinError}</p>
+                    </div>
+                  )}
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Invite Code
+                    </label>
+                    <input
+                      type="text"
+                      value={inviteCode}
+                      onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                      placeholder="e.g., AB3D5F7H"
+                      maxLength={12}
+                      className="w-full px-4 py-3 text-center text-xl font-mono tracking-widest border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--gold)] focus:border-transparent uppercase"
+                    />
+                    <p className="text-xs text-gray-400 mt-2">
+                      The code is 8 characters, letters and numbers only.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={handleJoinTransaction}
+                    disabled={joinLoading || !inviteCode.trim()}
+                    className="w-full btn-gold py-3 flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {joinLoading ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Joining...
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="w-5 h-5" />
+                        Join Transaction
+                      </>
+                    )}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

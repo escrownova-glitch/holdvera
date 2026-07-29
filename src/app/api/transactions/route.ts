@@ -10,6 +10,16 @@ import jwt from 'jsonwebtoken';
 const JWT_SECRET = process.env.JWT_SECRET || 'holdvera-secret';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://holdvera.site';
 
+// Generate short 8-char invite code (uppercase alphanumeric, easy to read/type)
+function generateInviteCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // No I/O/0/1 to avoid confusion
+  let code = '';
+  for (let i = 0; i < 8; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
 function getUserFromToken(request: NextRequest) {
   const token = request.headers.get('authorization')?.replace('Bearer ', '');
   if (!token) return null;
@@ -51,6 +61,14 @@ export async function POST(request: NextRequest) {
     const escrowFee = amountNum * 0.029;
     const totalAmount = amountNum + escrowFee;
 
+    // Generate unique invite code
+    let inviteCode = generateInviteCode();
+    let codeExists = await prisma.transaction.findUnique({ where: { inviteCode } });
+    while (codeExists) {
+      inviteCode = generateInviteCode();
+      codeExists = await prisma.transaction.findUnique({ where: { inviteCode } });
+    }
+
     // Create transaction
     const transaction = await prisma.transaction.create({
       data: {
@@ -69,6 +87,7 @@ export async function POST(request: NextRequest) {
         escrowFee,
         totalAmount,
         status: 'PENDING_ACCEPTANCE',
+        inviteCode,
       },
       include: {
         creator: true,
@@ -140,6 +159,7 @@ export async function POST(request: NextRequest) {
         id: transaction.id,
         transactionId: transaction.transactionId,
         inviteToken: transaction.inviteToken,
+        inviteCode: transaction.inviteCode,
         inviteLink,
       },
     });
