@@ -38,84 +38,84 @@ interface KYCData {
 }
 
 const COUNTRIES = [
-  { code: "US", name: "United States", requiresSSN: true },
-  { code: "GB", name: "United Kingdom", requiresSSN: false },
-  { code: "CA", name: "Canada", requiresSSN: true },
-  { code: "AU", name: "Australia", requiresSSN: false },
-  { code: "DE", name: "Germany", requiresSSN: false },
-  { code: "FR", name: "France", requiresSSN: false },
-  { code: "IT", name: "Italy", requiresSSN: false },
-  { code: "ES", name: "Spain", requiresSSN: false },
-  { code: "NL", name: "Netherlands", requiresSSN: false },
-  { code: "BE", name: "Belgium", requiresSSN: false },
-  { code: "CH", name: "Switzerland", requiresSSN: false },
-  { code: "AT", name: "Austria", requiresSSN: false },
-  { code: "SE", name: "Sweden", requiresSSN: false },
-  { code: "NO", name: "Norway", requiresSSN: false },
-  { code: "DK", name: "Denmark", requiresSSN: false },
-  { code: "FI", name: "Finland", requiresSSN: false },
-  { code: "IE", name: "Ireland", requiresSSN: false },
-  { code: "PT", name: "Portugal", requiresSSN: false },
-  { code: "PL", name: "Poland", requiresSSN: false },
-  { code: "CZ", name: "Czech Republic", requiresSSN: false },
-  { code: "GR", name: "Greece", requiresSSN: false },
-  { code: "HU", name: "Hungary", requiresSSN: false },
-  { code: "RO", name: "Romania", requiresSSN: false },
-  { code: "BG", name: "Bulgaria", requiresSSN: false },
-  { code: "HR", name: "Croatia", requiresSSN: false },
-  { code: "SK", name: "Slovakia", requiresSSN: false },
-  { code: "SI", name: "Slovenia", requiresSSN: false },
-  { code: "LT", name: "Lithuania", requiresSSN: false },
-  { code: "LV", name: "Latvia", requiresSSN: false },
-  { code: "EE", name: "Estonia", requiresSSN: false },
-  { code: "CY", name: "Cyprus", requiresSSN: false },
-  { code: "MT", name: "Malta", requiresSSN: false },
-  { code: "LU", name: "Luxembourg", requiresSSN: false },
-  { code: "JP", name: "Japan", requiresSSN: false },
-  { code: "KR", name: "South Korea", requiresSSN: false },
-  { code: "SG", name: "Singapore", requiresSSN: false },
-  { code: "HK", name: "Hong Kong", requiresSSN: false },
-  { code: "TW", name: "Taiwan", requiresSSN: false },
-  { code: "MY", name: "Malaysia", requiresSSN: false },
-  { code: "TH", name: "Thailand", requiresSSN: false },
-  { code: "PH", name: "Philippines", requiresSSN: false },
-  { code: "ID", name: "Indonesia", requiresSSN: false },
-  { code: "VN", name: "Vietnam", requiresSSN: false },
-  { code: "IN", name: "India", requiresSSN: false },
-  { code: "PK", name: "Pakistan", requiresSSN: false },
-  { code: "BD", name: "Bangladesh", requiresSSN: false },
-  { code: "AE", name: "United Arab Emirates", requiresSSN: false },
-  { code: "SA", name: "Saudi Arabia", requiresSSN: false },
-  { code: "QA", name: "Qatar", requiresSSN: false },
-  { code: "KW", name: "Kuwait", requiresSSN: false },
-  { code: "BH", name: "Bahrain", requiresSSN: false },
-  { code: "OM", name: "Oman", requiresSSN: false },
-  { code: "IL", name: "Israel", requiresSSN: false },
-  { code: "TR", name: "Turkey", requiresSSN: false },
-  { code: "EG", name: "Egypt", requiresSSN: false },
-  { code: "ZA", name: "South Africa", requiresSSN: false },
-  { code: "NG", name: "Nigeria", requiresSSN: false },
-  { code: "KE", name: "Kenya", requiresSSN: false },
-  { code: "GH", name: "Ghana", requiresSSN: false },
-  { code: "MA", name: "Morocco", requiresSSN: false },
-  { code: "TN", name: "Tunisia", requiresSSN: false },
-  { code: "MX", name: "Mexico", requiresSSN: false },
-  { code: "BR", name: "Brazil", requiresSSN: false },
-  { code: "AR", name: "Argentina", requiresSSN: false },
-  { code: "CL", name: "Chile", requiresSSN: false },
-  { code: "CO", name: "Colombia", requiresSSN: false },
-  { code: "PE", name: "Peru", requiresSSN: false },
-  { code: "VE", name: "Venezuela", requiresSSN: false },
-  { code: "EC", name: "Ecuador", requiresSSN: false },
-  { code: "UY", name: "Uruguay", requiresSSN: false },
-  { code: "PY", name: "Paraguay", requiresSSN: false },
-  { code: "BO", name: "Bolivia", requiresSSN: false },
-  { code: "NZ", name: "New Zealand", requiresSSN: false },
-  { code: "RU", name: "Russia", requiresSSN: false },
-  { code: "UA", name: "Ukraine", requiresSSN: false },
-  { code: "BY", name: "Belarus", requiresSSN: false },
-  { code: "KZ", name: "Kazakhstan", requiresSSN: false },
-  { code: "OTHER", name: "Other", requiresSSN: false },
+  { code: "US", name: "United States", requiresSSN: true, phoneCode: "+1", taxIdLabel: "Social Security Number (SSN)", taxIdPlaceholder: "XXX-XX-XXXX" },
+  { code: "GB", name: "United Kingdom", requiresSSN: false, phoneCode: "+44", taxIdLabel: "National Insurance Number", taxIdPlaceholder: "QQ 12 34 56 C" },
+  { code: "CA", name: "Canada", requiresSSN: true, phoneCode: "+1", taxIdLabel: "Social Insurance Number (SIN)", taxIdPlaceholder: "XXX-XXX-XXX" },
+  { code: "AU", name: "Australia", requiresSSN: false, phoneCode: "+61", taxIdLabel: "Tax File Number", taxIdPlaceholder: "XXX XXX XXX" },
+  { code: "DE", name: "Germany", requiresSSN: false, phoneCode: "+49", taxIdLabel: "Tax ID", taxIdPlaceholder: "" },
+  { code: "FR", name: "France", requiresSSN: false, phoneCode: "+33", taxIdLabel: "Tax ID", taxIdPlaceholder: "" },
+  { code: "IT", name: "Italy", requiresSSN: false, phoneCode: "+39", taxIdLabel: "Codice Fiscale", taxIdPlaceholder: "" },
+  { code: "ES", name: "Spain", requiresSSN: false, phoneCode: "+34", taxIdLabel: "NIE/NIF", taxIdPlaceholder: "" },
+  { code: "NL", name: "Netherlands", requiresSSN: false, phoneCode: "+31", taxIdLabel: "BSN", taxIdPlaceholder: "" },
+  { code: "BE", name: "Belgium", requiresSSN: false, phoneCode: "+32", taxIdLabel: "National Number", taxIdPlaceholder: "" },
+  { code: "CH", name: "Switzerland", requiresSSN: false, phoneCode: "+41", taxIdLabel: "AHV Number", taxIdPlaceholder: "" },
+  { code: "AT", name: "Austria", requiresSSN: false, phoneCode: "+43", taxIdLabel: "Tax ID", taxIdPlaceholder: "" },
+  { code: "SE", name: "Sweden", requiresSSN: false, phoneCode: "+46", taxIdLabel: "Personal Number", taxIdPlaceholder: "" },
+  { code: "NO", name: "Norway", requiresSSN: false, phoneCode: "+47", taxIdLabel: "Personal Number", taxIdPlaceholder: "" },
+  { code: "DK", name: "Denmark", requiresSSN: false, phoneCode: "+45", taxIdLabel: "CPR Number", taxIdPlaceholder: "" },
+  { code: "FI", name: "Finland", requiresSSN: false, phoneCode: "+358", taxIdLabel: "Personal ID", taxIdPlaceholder: "" },
+  { code: "IE", name: "Ireland", requiresSSN: false, phoneCode: "+353", taxIdLabel: "PPS Number", taxIdPlaceholder: "" },
+  { code: "PT", name: "Portugal", requiresSSN: false, phoneCode: "+351", taxIdLabel: "NIF", taxIdPlaceholder: "" },
+  { code: "PL", name: "Poland", requiresSSN: false, phoneCode: "+48", taxIdLabel: "PESEL", taxIdPlaceholder: "" },
+  { code: "CZ", name: "Czech Republic", requiresSSN: false, phoneCode: "+420", taxIdLabel: "Birth Number", taxIdPlaceholder: "" },
+  { code: "GR", name: "Greece", requiresSSN: false, phoneCode: "+30", taxIdLabel: "AFM", taxIdPlaceholder: "" },
+  { code: "HU", name: "Hungary", requiresSSN: false, phoneCode: "+36", taxIdLabel: "Tax ID", taxIdPlaceholder: "" },
+  { code: "RO", name: "Romania", requiresSSN: false, phoneCode: "+40", taxIdLabel: "CNP", taxIdPlaceholder: "" },
+  { code: "BG", name: "Bulgaria", requiresSSN: false, phoneCode: "+359", taxIdLabel: "EGN", taxIdPlaceholder: "" },
+  { code: "HR", name: "Croatia", requiresSSN: false, phoneCode: "+385", taxIdLabel: "OIB", taxIdPlaceholder: "" },
+  { code: "SK", name: "Slovakia", requiresSSN: false, phoneCode: "+421", taxIdLabel: "Birth Number", taxIdPlaceholder: "" },
+  { code: "SI", name: "Slovenia", requiresSSN: false, phoneCode: "+386", taxIdLabel: "Tax Number", taxIdPlaceholder: "" },
+  { code: "LT", name: "Lithuania", requiresSSN: false, phoneCode: "+370", taxIdLabel: "Personal Code", taxIdPlaceholder: "" },
+  { code: "LV", name: "Latvia", requiresSSN: false, phoneCode: "+371", taxIdLabel: "Personal Code", taxIdPlaceholder: "" },
+  { code: "EE", name: "Estonia", requiresSSN: false, phoneCode: "+372", taxIdLabel: "Personal ID", taxIdPlaceholder: "" },
+  { code: "CY", name: "Cyprus", requiresSSN: false, phoneCode: "+357", taxIdLabel: "TIC", taxIdPlaceholder: "" },
+  { code: "MT", name: "Malta", requiresSSN: false, phoneCode: "+356", taxIdLabel: "ID Number", taxIdPlaceholder: "" },
+  { code: "LU", name: "Luxembourg", requiresSSN: false, phoneCode: "+352", taxIdLabel: "National ID", taxIdPlaceholder: "" },
+  { code: "JP", name: "Japan", requiresSSN: false, phoneCode: "+81", taxIdLabel: "My Number", taxIdPlaceholder: "" },
+  { code: "KR", name: "South Korea", requiresSSN: false, phoneCode: "+82", taxIdLabel: "RRN", taxIdPlaceholder: "" },
+  { code: "SG", name: "Singapore", requiresSSN: false, phoneCode: "+65", taxIdLabel: "NRIC/FIN", taxIdPlaceholder: "" },
+  { code: "HK", name: "Hong Kong", requiresSSN: false, phoneCode: "+852", taxIdLabel: "HKID", taxIdPlaceholder: "" },
+  { code: "TW", name: "Taiwan", requiresSSN: false, phoneCode: "+886", taxIdLabel: "National ID", taxIdPlaceholder: "" },
+  { code: "MY", name: "Malaysia", requiresSSN: false, phoneCode: "+60", taxIdLabel: "NRIC", taxIdPlaceholder: "" },
+  { code: "TH", name: "Thailand", requiresSSN: false, phoneCode: "+66", taxIdLabel: "National ID", taxIdPlaceholder: "" },
+  { code: "PH", name: "Philippines", requiresSSN: false, phoneCode: "+63", taxIdLabel: "TIN", taxIdPlaceholder: "" },
+  { code: "ID", name: "Indonesia", requiresSSN: false, phoneCode: "+62", taxIdLabel: "NIK", taxIdPlaceholder: "" },
+  { code: "VN", name: "Vietnam", requiresSSN: false, phoneCode: "+84", taxIdLabel: "CCCD", taxIdPlaceholder: "" },
+  { code: "IN", name: "India", requiresSSN: false, phoneCode: "+91", taxIdLabel: "Aadhaar/PAN", taxIdPlaceholder: "" },
+  { code: "PK", name: "Pakistan", requiresSSN: false, phoneCode: "+92", taxIdLabel: "CNIC", taxIdPlaceholder: "" },
+  { code: "BD", name: "Bangladesh", requiresSSN: false, phoneCode: "+880", taxIdLabel: "NID", taxIdPlaceholder: "" },
+  { code: "AE", name: "United Arab Emirates", requiresSSN: false, phoneCode: "+971", taxIdLabel: "Emirates ID", taxIdPlaceholder: "" },
+  { code: "SA", name: "Saudi Arabia", requiresSSN: false, phoneCode: "+966", taxIdLabel: "National ID", taxIdPlaceholder: "" },
+  { code: "QA", name: "Qatar", requiresSSN: false, phoneCode: "+974", taxIdLabel: "QID", taxIdPlaceholder: "" },
+  { code: "KW", name: "Kuwait", requiresSSN: false, phoneCode: "+965", taxIdLabel: "Civil ID", taxIdPlaceholder: "" },
+  { code: "BH", name: "Bahrain", requiresSSN: false, phoneCode: "+973", taxIdLabel: "CPR", taxIdPlaceholder: "" },
+  { code: "OM", name: "Oman", requiresSSN: false, phoneCode: "+968", taxIdLabel: "National ID", taxIdPlaceholder: "" },
+  { code: "IL", name: "Israel", requiresSSN: false, phoneCode: "+972", taxIdLabel: "Teudat Zehut", taxIdPlaceholder: "" },
+  { code: "TR", name: "Turkey", requiresSSN: false, phoneCode: "+90", taxIdLabel: "TC Kimlik No", taxIdPlaceholder: "" },
+  { code: "EG", name: "Egypt", requiresSSN: false, phoneCode: "+20", taxIdLabel: "National ID", taxIdPlaceholder: "" },
+  { code: "ZA", name: "South Africa", requiresSSN: false, phoneCode: "+27", taxIdLabel: "ID Number", taxIdPlaceholder: "" },
+  { code: "NG", name: "Nigeria", requiresSSN: false, phoneCode: "+234", taxIdLabel: "NIN", taxIdPlaceholder: "" },
+  { code: "KE", name: "Kenya", requiresSSN: false, phoneCode: "+254", taxIdLabel: "National ID", taxIdPlaceholder: "" },
+  { code: "GH", name: "Ghana", requiresSSN: false, phoneCode: "+233", taxIdLabel: "Ghana Card", taxIdPlaceholder: "" },
+  { code: "MA", name: "Morocco", requiresSSN: false, phoneCode: "+212", taxIdLabel: "CIN", taxIdPlaceholder: "" },
+  { code: "TN", name: "Tunisia", requiresSSN: false, phoneCode: "+216", taxIdLabel: "CIN", taxIdPlaceholder: "" },
+  { code: "MX", name: "Mexico", requiresSSN: false, phoneCode: "+52", taxIdLabel: "CURP/RFC", taxIdPlaceholder: "" },
+  { code: "BR", name: "Brazil", requiresSSN: false, phoneCode: "+55", taxIdLabel: "CPF", taxIdPlaceholder: "" },
+  { code: "AR", name: "Argentina", requiresSSN: false, phoneCode: "+54", taxIdLabel: "CUIL/CUIT", taxIdPlaceholder: "" },
+  { code: "CL", name: "Chile", requiresSSN: false, phoneCode: "+56", taxIdLabel: "RUT", taxIdPlaceholder: "" },
+  { code: "CO", name: "Colombia", requiresSSN: false, phoneCode: "+57", taxIdLabel: "Cedula", taxIdPlaceholder: "" },
+  { code: "PE", name: "Peru", requiresSSN: false, phoneCode: "+51", taxIdLabel: "DNI", taxIdPlaceholder: "" },
+  { code: "VE", name: "Venezuela", requiresSSN: false, phoneCode: "+58", taxIdLabel: "Cedula", taxIdPlaceholder: "" },
+  { code: "EC", name: "Ecuador", requiresSSN: false, phoneCode: "+593", taxIdLabel: "Cedula", taxIdPlaceholder: "" },
+  { code: "UY", name: "Uruguay", requiresSSN: false, phoneCode: "+598", taxIdLabel: "Cedula", taxIdPlaceholder: "" },
+  { code: "PY", name: "Paraguay", requiresSSN: false, phoneCode: "+595", taxIdLabel: "Cedula", taxIdPlaceholder: "" },
+  { code: "BO", name: "Bolivia", requiresSSN: false, phoneCode: "+591", taxIdLabel: "Cedula", taxIdPlaceholder: "" },
+  { code: "NZ", name: "New Zealand", requiresSSN: false, phoneCode: "+64", taxIdLabel: "IRD Number", taxIdPlaceholder: "" },
+  { code: "RU", name: "Russia", requiresSSN: false, phoneCode: "+7", taxIdLabel: "INN", taxIdPlaceholder: "" },
+  { code: "UA", name: "Ukraine", requiresSSN: false, phoneCode: "+380", taxIdLabel: "IPN", taxIdPlaceholder: "" },
+  { code: "BY", name: "Belarus", requiresSSN: false, phoneCode: "+375", taxIdLabel: "Personal Number", taxIdPlaceholder: "" },
+  { code: "KZ", name: "Kazakhstan", requiresSSN: false, phoneCode: "+7", taxIdLabel: "IIN", taxIdPlaceholder: "" },
+  { code: "OTHER", name: "Other", requiresSSN: false, phoneCode: "+", taxIdLabel: "Tax ID", taxIdPlaceholder: "" },
 ].sort((a, b) => a.name.localeCompare(b.name));
 
 export default function KYCPage() {
@@ -157,6 +157,7 @@ export default function KYCPage() {
         ...prev,
         firstName: userData.firstName || "",
         lastName: userData.lastName || "",
+        phone: userData.phone || "",
       }));
     }
     fetchKYCStatus();
@@ -420,15 +421,25 @@ export default function KYCPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Phone Number <span className="text-red-500">*</span>
               </label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--gold)]"
-                  placeholder="+1 (555) 123-4567"
-                />
+              <div className="flex gap-2">
+                <div className="w-24 flex-shrink-0">
+                  <input
+                    type="text"
+                    value={selectedCountry?.phoneCode || "+1"}
+                    readOnly
+                    className="w-full px-3 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 text-center"
+                  />
+                </div>
+                <div className="relative flex-1">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--gold)]"
+                    placeholder="(555) 123-4567"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -524,7 +535,7 @@ export default function KYCPage() {
           </div>
         </div>
 
-        {/* Tax ID / SSN */}
+        {/* Tax ID / SSN / SIN */}
         {requiresSSN && (
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -533,13 +544,13 @@ export default function KYCPage() {
             </h3>
             <div className="max-w-md">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {formData.country === "US" ? "Social Security Number (SSN)" : "Tax ID / SIN"} <span className="text-red-500">*</span>
+                {selectedCountry?.taxIdLabel || "Tax ID"} <span className="text-red-500">*</span>
               </label>
               <input
                 type="password"
                 value={formData.ssn}
                 onChange={(e) => setFormData({ ...formData, ssn: e.target.value })}
-                placeholder={formData.country === "US" ? "XXX-XX-XXXX" : "Enter your tax ID"}
+                placeholder={selectedCountry?.taxIdPlaceholder || "Enter your tax ID"}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--gold)]"
               />
               <p className="text-xs text-gray-500 mt-1">This information is encrypted and securely stored.</p>

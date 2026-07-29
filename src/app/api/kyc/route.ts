@@ -93,6 +93,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check for duplicate phone number
+    const existingPhone = await prisma.user.findFirst({
+      where: {
+        kycPhone: phone,
+        id: { not: tokenData.userId },
+      },
+    });
+
+    if (existingPhone) {
+      return NextResponse.json(
+        { error: 'This phone number is already registered to another account' },
+        { status: 400 }
+      );
+    }
+
+    // Check for duplicate SSN/SIN/Tax ID
+    if (ssn) {
+      const existingSSN = await prisma.user.findFirst({
+        where: {
+          ssn: ssn,
+          id: { not: tokenData.userId },
+        },
+      });
+
+      if (existingSSN) {
+        return NextResponse.json(
+          { error: 'This tax ID is already registered to another account' },
+          { status: 400 }
+        );
+      }
+    }
+
     const user = await prisma.user.update({
       where: { id: tokenData.userId },
       data: {

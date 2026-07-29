@@ -45,8 +45,8 @@ model User {
   kycLastName   String?
   dateOfBirth   String?
   nationality   String?
-  kycPhone      String?
-  ssn           String?   // Tax ID / SSN / National ID number
+  kycPhone      String?   @unique // Unique phone per verified user
+  ssn           String?   @unique // Tax ID / SSN / SIN - unique per user
   address       String?
   addressLine2  String?
   city          String?
