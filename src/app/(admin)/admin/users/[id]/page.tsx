@@ -30,15 +30,20 @@ interface UserDetail {
   phone: string | null;
   role: string;
   verified: boolean;
-  emailVerified: boolean;
   createdAt: string;
   signupMethod: string;
   kycStatus: string;
   kycSubmittedAt: string | null;
   kycReviewedAt: string | null;
   kycRejectReason: string | null;
+  kycFirstName: string | null;
+  kycMiddleName: string | null;
+  kycLastName: string | null;
   dateOfBirth: string | null;
+  nationality: string | null;
+  kycPhone: string | null;
   address: string | null;
+  addressLine2: string | null;
   city: string | null;
   state: string | null;
   zipCode: string | null;
@@ -325,7 +330,50 @@ export default function AdminUserDetailPage() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                <div>
+                  <p className="text-gray-400">KYC Name</p>
+                  <p className="text-white">
+                    {user.kycFirstName ? `${user.kycFirstName} ${user.kycMiddleName || ''} ${user.kycLastName}`.trim() : "Not provided"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-400">Date of Birth</p>
+                  <p className="text-white">{user.dateOfBirth || "Not provided"}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400">Nationality</p>
+                  <p className="text-white">{user.nationality || "Not provided"}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400">KYC Phone</p>
+                  <p className="text-white">{user.kycPhone || "Not provided"}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400">SSN/Tax ID</p>
+                  <p className="text-white">{user.ssnLast4 || "Not provided"}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400">ID Type</p>
+                  <p className="text-white">{user.idType?.replace(/_/g, ' ') || "Not provided"}</p>
+                </div>
+                <div className="col-span-2 md:col-span-3">
+                  <p className="text-gray-400">Address</p>
+                  <p className="text-white">
+                    {user.address ? (
+                      <>
+                        {user.address}
+                        {user.addressLine2 && <>, {user.addressLine2}</>}
+                        <br />
+                        {user.city}{user.state && `, ${user.state}`} {user.zipCode}
+                        <br />
+                        {user.country}
+                      </>
+                    ) : (
+                      "Not provided"
+                    )}
+                  </p>
+                </div>
                 <div>
                   <p className="text-gray-400">Submitted</p>
                   <p className="text-white">{user.kycSubmittedAt ? new Date(user.kycSubmittedAt).toLocaleString() : "Not submitted"}</p>
@@ -333,10 +381,6 @@ export default function AdminUserDetailPage() {
                 <div>
                   <p className="text-gray-400">Reviewed</p>
                   <p className="text-white">{user.kycReviewedAt ? new Date(user.kycReviewedAt).toLocaleString() : "Not reviewed"}</p>
-                </div>
-                <div>
-                  <p className="text-gray-400">ID Type</p>
-                  <p className="text-white">{user.idType || "Not provided"}</p>
                 </div>
               </div>
             </div>

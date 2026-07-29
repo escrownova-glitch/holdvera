@@ -16,11 +16,13 @@ import {
   CheckCircle,
   Clock,
   XCircle,
-  AlertCircle,
   Shield,
   Camera,
   CreditCard,
-  User
+  User,
+  Globe,
+  Phone,
+  MapPin
 } from "lucide-react";
 
 interface UserData {
@@ -33,13 +35,88 @@ interface KYCData {
   kycStatus: string;
   kycSubmittedAt: string | null;
   kycRejectReason: string | null;
-  dateOfBirth: string | null;
-  address: string | null;
-  city: string | null;
-  state: string | null;
-  zipCode: string | null;
-  idType: string | null;
 }
+
+const COUNTRIES = [
+  { code: "US", name: "United States", requiresSSN: true },
+  { code: "GB", name: "United Kingdom", requiresSSN: false },
+  { code: "CA", name: "Canada", requiresSSN: true },
+  { code: "AU", name: "Australia", requiresSSN: false },
+  { code: "DE", name: "Germany", requiresSSN: false },
+  { code: "FR", name: "France", requiresSSN: false },
+  { code: "IT", name: "Italy", requiresSSN: false },
+  { code: "ES", name: "Spain", requiresSSN: false },
+  { code: "NL", name: "Netherlands", requiresSSN: false },
+  { code: "BE", name: "Belgium", requiresSSN: false },
+  { code: "CH", name: "Switzerland", requiresSSN: false },
+  { code: "AT", name: "Austria", requiresSSN: false },
+  { code: "SE", name: "Sweden", requiresSSN: false },
+  { code: "NO", name: "Norway", requiresSSN: false },
+  { code: "DK", name: "Denmark", requiresSSN: false },
+  { code: "FI", name: "Finland", requiresSSN: false },
+  { code: "IE", name: "Ireland", requiresSSN: false },
+  { code: "PT", name: "Portugal", requiresSSN: false },
+  { code: "PL", name: "Poland", requiresSSN: false },
+  { code: "CZ", name: "Czech Republic", requiresSSN: false },
+  { code: "GR", name: "Greece", requiresSSN: false },
+  { code: "HU", name: "Hungary", requiresSSN: false },
+  { code: "RO", name: "Romania", requiresSSN: false },
+  { code: "BG", name: "Bulgaria", requiresSSN: false },
+  { code: "HR", name: "Croatia", requiresSSN: false },
+  { code: "SK", name: "Slovakia", requiresSSN: false },
+  { code: "SI", name: "Slovenia", requiresSSN: false },
+  { code: "LT", name: "Lithuania", requiresSSN: false },
+  { code: "LV", name: "Latvia", requiresSSN: false },
+  { code: "EE", name: "Estonia", requiresSSN: false },
+  { code: "CY", name: "Cyprus", requiresSSN: false },
+  { code: "MT", name: "Malta", requiresSSN: false },
+  { code: "LU", name: "Luxembourg", requiresSSN: false },
+  { code: "JP", name: "Japan", requiresSSN: false },
+  { code: "KR", name: "South Korea", requiresSSN: false },
+  { code: "SG", name: "Singapore", requiresSSN: false },
+  { code: "HK", name: "Hong Kong", requiresSSN: false },
+  { code: "TW", name: "Taiwan", requiresSSN: false },
+  { code: "MY", name: "Malaysia", requiresSSN: false },
+  { code: "TH", name: "Thailand", requiresSSN: false },
+  { code: "PH", name: "Philippines", requiresSSN: false },
+  { code: "ID", name: "Indonesia", requiresSSN: false },
+  { code: "VN", name: "Vietnam", requiresSSN: false },
+  { code: "IN", name: "India", requiresSSN: false },
+  { code: "PK", name: "Pakistan", requiresSSN: false },
+  { code: "BD", name: "Bangladesh", requiresSSN: false },
+  { code: "AE", name: "United Arab Emirates", requiresSSN: false },
+  { code: "SA", name: "Saudi Arabia", requiresSSN: false },
+  { code: "QA", name: "Qatar", requiresSSN: false },
+  { code: "KW", name: "Kuwait", requiresSSN: false },
+  { code: "BH", name: "Bahrain", requiresSSN: false },
+  { code: "OM", name: "Oman", requiresSSN: false },
+  { code: "IL", name: "Israel", requiresSSN: false },
+  { code: "TR", name: "Turkey", requiresSSN: false },
+  { code: "EG", name: "Egypt", requiresSSN: false },
+  { code: "ZA", name: "South Africa", requiresSSN: false },
+  { code: "NG", name: "Nigeria", requiresSSN: false },
+  { code: "KE", name: "Kenya", requiresSSN: false },
+  { code: "GH", name: "Ghana", requiresSSN: false },
+  { code: "MA", name: "Morocco", requiresSSN: false },
+  { code: "TN", name: "Tunisia", requiresSSN: false },
+  { code: "MX", name: "Mexico", requiresSSN: false },
+  { code: "BR", name: "Brazil", requiresSSN: false },
+  { code: "AR", name: "Argentina", requiresSSN: false },
+  { code: "CL", name: "Chile", requiresSSN: false },
+  { code: "CO", name: "Colombia", requiresSSN: false },
+  { code: "PE", name: "Peru", requiresSSN: false },
+  { code: "VE", name: "Venezuela", requiresSSN: false },
+  { code: "EC", name: "Ecuador", requiresSSN: false },
+  { code: "UY", name: "Uruguay", requiresSSN: false },
+  { code: "PY", name: "Paraguay", requiresSSN: false },
+  { code: "BO", name: "Bolivia", requiresSSN: false },
+  { code: "NZ", name: "New Zealand", requiresSSN: false },
+  { code: "RU", name: "Russia", requiresSSN: false },
+  { code: "UA", name: "Ukraine", requiresSSN: false },
+  { code: "BY", name: "Belarus", requiresSSN: false },
+  { code: "KZ", name: "Kazakhstan", requiresSSN: false },
+  { code: "OTHER", name: "Other", requiresSSN: false },
+].sort((a, b) => a.name.localeCompare(b.name));
 
 export default function KYCPage() {
   const [user, setUser] = useState<UserData | null>(null);
@@ -49,14 +126,20 @@ export default function KYCPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
+    firstName: "",
+    middleName: "",
+    lastName: "",
     dateOfBirth: "",
+    nationality: "",
+    phone: "",
     ssn: "",
     address: "",
+    addressLine2: "",
     city: "",
     state: "",
     zipCode: "",
-    country: "USA",
-    idType: "DRIVERS_LICENSE",
+    country: "",
+    idType: "PASSPORT",
   });
 
   const [images, setImages] = useState({
@@ -68,7 +151,13 @@ export default function KYCPage() {
   useEffect(() => {
     const storedUser = localStorage.getItem("holdvera_user");
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      const userData = JSON.parse(storedUser);
+      setUser(userData);
+      setFormData(prev => ({
+        ...prev,
+        firstName: userData.firstName || "",
+        lastName: userData.lastName || "",
+      }));
     }
     fetchKYCStatus();
   }, []);
@@ -98,6 +187,11 @@ export default function KYCPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File size must be less than 5MB");
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (event) => {
       if (event.target?.result) {
@@ -107,10 +201,28 @@ export default function KYCPage() {
     reader.readAsDataURL(file);
   };
 
+  const selectedCountry = COUNTRIES.find(c => c.code === formData.country);
+  const requiresSSN = selectedCountry?.requiresSSN || false;
+  const isPassport = formData.idType === "PASSPORT";
+
   const handleSubmit = async () => {
-    if (!formData.dateOfBirth || !formData.ssn || !formData.address || !formData.city ||
-        !formData.state || !formData.zipCode || !images.idFront || !images.idBack || !images.selfie) {
-      alert("Please fill in all fields and upload all required documents.");
+    // Validate required fields
+    if (!formData.firstName || !formData.lastName || !formData.dateOfBirth ||
+        !formData.nationality || !formData.phone || !formData.address ||
+        !formData.city || !formData.country || !images.idFront || !images.selfie) {
+      alert("Please fill in all required fields and upload required documents.");
+      return;
+    }
+
+    // SSN required for US/CA
+    if (requiresSSN && !formData.ssn) {
+      alert("Tax ID / SSN is required for your country.");
+      return;
+    }
+
+    // ID back required for non-passport
+    if (!isPassport && !images.idBack) {
+      alert("Please upload the back of your ID.");
       return;
     }
 
@@ -126,19 +238,20 @@ export default function KYCPage() {
         body: JSON.stringify({
           ...formData,
           idFrontUrl: images.idFront,
-          idBackUrl: images.idBack,
+          idBackUrl: isPassport ? null : images.idBack,
           selfieUrl: images.selfie,
         }),
       });
 
       if (!res.ok) {
-        throw new Error("Failed to submit KYC");
+        const data = await res.json();
+        throw new Error(data.error || "Failed to submit KYC");
       }
 
       await fetchKYCStatus();
-    } catch (error) {
+    } catch (error: any) {
       console.error("KYC submission error:", error);
-      alert("Failed to submit verification. Please try again.");
+      alert(error.message || "Failed to submit verification. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -227,9 +340,47 @@ export default function KYCPage() {
             <User className="w-5 h-5 text-[var(--gold)]" />
             Personal Information
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                First Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.firstName}
+                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--gold)]"
+                placeholder="John"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Middle Name</label>
+              <input
+                type="text"
+                value={formData.middleName}
+                onChange={(e) => setFormData({ ...formData, middleName: e.target.value })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--gold)]"
+                placeholder="William"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Last Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.lastName}
+                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--gold)]"
+                placeholder="Doe"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Date of Birth <span className="text-red-500">*</span>
+              </label>
               <input
                 type="date"
                 value={formData.dateOfBirth}
@@ -238,14 +389,34 @@ export default function KYCPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Social Security Number</label>
-              <input
-                type="password"
-                value={formData.ssn}
-                onChange={(e) => setFormData({ ...formData, ssn: e.target.value })}
-                placeholder="XXX-XX-XXXX"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--gold)]"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Nationality <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={formData.nationality}
+                onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--gold)] bg-white"
+              >
+                <option value="">Select nationality</option>
+                {COUNTRIES.map(c => (
+                  <option key={c.code} value={c.code}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Phone Number <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--gold)]"
+                  placeholder="+1 (555) 123-4567"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -253,49 +424,115 @@ export default function KYCPage() {
         {/* Address */}
         <div>
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Home className="w-5 h-5 text-[var(--gold)]" />
-            Address
+            <MapPin className="w-5 h-5 text-[var(--gold)]" />
+            Residential Address
           </h3>
           <div className="space-y-4">
-            <input
-              type="text"
-              value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              placeholder="Street Address"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--gold)]"
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Country of Residence <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <select
+                  value={formData.country}
+                  onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--gold)] bg-white"
+                >
+                  <option value="">Select country</option>
+                  {COUNTRIES.map(c => (
+                    <option key={c.code} value={c.code}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Street Address <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                placeholder="123 Main Street"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--gold)]"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Address Line 2 <span className="text-gray-400 font-normal">(Apt, Suite, etc.)</span>
+              </label>
+              <input
+                type="text"
+                value={formData.addressLine2}
+                onChange={(e) => setFormData({ ...formData, addressLine2: e.target.value })}
+                placeholder="Apt 4B"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--gold)]"
+              />
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <input
-                type="text"
-                value={formData.city}
-                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                placeholder="City"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--gold)]"
-              />
-              <input
-                type="text"
-                value={formData.state}
-                onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                placeholder="State"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--gold)]"
-              />
-              <input
-                type="text"
-                value={formData.zipCode}
-                onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
-                placeholder="ZIP Code"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--gold)]"
-              />
-              <select
-                value={formData.country}
-                onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--gold)] bg-white"
-              >
-                <option value="USA">USA</option>
-              </select>
+              <div className="col-span-2 md:col-span-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  City <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.city}
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  placeholder="New York"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--gold)]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  State / Province
+                </label>
+                <input
+                  type="text"
+                  value={formData.state}
+                  onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                  placeholder="NY"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--gold)]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  ZIP / Postal Code
+                </label>
+                <input
+                  type="text"
+                  value={formData.zipCode}
+                  onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
+                  placeholder="10001"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--gold)]"
+                />
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Tax ID / SSN */}
+        {requiresSSN && (
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <CreditCard className="w-5 h-5 text-[var(--gold)]" />
+              Tax Identification
+            </h3>
+            <div className="max-w-md">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {formData.country === "US" ? "Social Security Number (SSN)" : "Tax ID / SIN"} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="password"
+                value={formData.ssn}
+                onChange={(e) => setFormData({ ...formData, ssn: e.target.value })}
+                placeholder={formData.country === "US" ? "XXX-XX-XXXX" : "Enter your tax ID"}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--gold)]"
+              />
+              <p className="text-xs text-gray-500 mt-1">This information is encrypted and securely stored.</p>
+            </div>
+          </div>
+        )}
 
         {/* ID Upload */}
         <div>
@@ -305,22 +542,32 @@ export default function KYCPage() {
           </h3>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">ID Type</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Document Type <span className="text-red-500">*</span>
+            </label>
             <select
               value={formData.idType}
-              onChange={(e) => setFormData({ ...formData, idType: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--gold)] bg-white"
+              onChange={(e) => {
+                setFormData({ ...formData, idType: e.target.value });
+                if (e.target.value === "PASSPORT") {
+                  setImages(prev => ({ ...prev, idBack: "" }));
+                }
+              }}
+              className="w-full max-w-md px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--gold)] bg-white"
             >
-              <option value="DRIVERS_LICENSE">Driver&apos;s License</option>
               <option value="PASSPORT">Passport</option>
-              <option value="STATE_ID">State ID</option>
+              <option value="DRIVERS_LICENSE">Driver&apos;s License</option>
+              <option value="NATIONAL_ID">National ID Card</option>
+              <option value="RESIDENCE_PERMIT">Residence Permit</option>
             </select>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* ID Front */}
+          <div className={`grid grid-cols-1 ${isPassport ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-4`}>
+            {/* ID Front / Passport */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Front of ID</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {isPassport ? "Passport Photo Page" : "Front of ID"} <span className="text-red-500">*</span>
+              </label>
               <label className={`
                 aspect-video rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors overflow-hidden
                 ${images.idFront ? "border-green-400 bg-green-50" : "border-gray-300 hover:border-[var(--gold)] hover:bg-[var(--gold)]/5"}
@@ -330,35 +577,43 @@ export default function KYCPage() {
                 ) : (
                   <>
                     <Upload className="w-6 h-6 text-gray-400 mb-2" />
-                    <span className="text-sm text-gray-500">Upload Front</span>
+                    <span className="text-sm text-gray-500">Upload {isPassport ? "Passport" : "Front"}</span>
+                    <span className="text-xs text-gray-400 mt-1">Max 5MB</span>
                   </>
                 )}
                 <input type="file" accept="image/*" onChange={handleImageUpload("idFront")} className="hidden" />
               </label>
             </div>
 
-            {/* ID Back */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Back of ID</label>
-              <label className={`
-                aspect-video rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors overflow-hidden
-                ${images.idBack ? "border-green-400 bg-green-50" : "border-gray-300 hover:border-[var(--gold)] hover:bg-[var(--gold)]/5"}
-              `}>
-                {images.idBack ? (
-                  <img src={images.idBack} alt="ID Back" className="w-full h-full object-cover" />
-                ) : (
-                  <>
-                    <Upload className="w-6 h-6 text-gray-400 mb-2" />
-                    <span className="text-sm text-gray-500">Upload Back</span>
-                  </>
-                )}
-                <input type="file" accept="image/*" onChange={handleImageUpload("idBack")} className="hidden" />
-              </label>
-            </div>
+            {/* ID Back - only for non-passport */}
+            {!isPassport && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Back of ID <span className="text-red-500">*</span>
+                </label>
+                <label className={`
+                  aspect-video rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors overflow-hidden
+                  ${images.idBack ? "border-green-400 bg-green-50" : "border-gray-300 hover:border-[var(--gold)] hover:bg-[var(--gold)]/5"}
+                `}>
+                  {images.idBack ? (
+                    <img src={images.idBack} alt="ID Back" className="w-full h-full object-cover" />
+                  ) : (
+                    <>
+                      <Upload className="w-6 h-6 text-gray-400 mb-2" />
+                      <span className="text-sm text-gray-500">Upload Back</span>
+                      <span className="text-xs text-gray-400 mt-1">Max 5MB</span>
+                    </>
+                  )}
+                  <input type="file" accept="image/*" onChange={handleImageUpload("idBack")} className="hidden" />
+                </label>
+              </div>
+            )}
 
             {/* Selfie */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Selfie Holding ID</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Selfie Holding ID <span className="text-red-500">*</span>
+              </label>
               <label className={`
                 aspect-video rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors overflow-hidden
                 ${images.selfie ? "border-green-400 bg-green-50" : "border-gray-300 hover:border-[var(--gold)] hover:bg-[var(--gold)]/5"}
@@ -369,12 +624,17 @@ export default function KYCPage() {
                   <>
                     <Camera className="w-6 h-6 text-gray-400 mb-2" />
                     <span className="text-sm text-gray-500">Take Selfie</span>
+                    <span className="text-xs text-gray-400 mt-1">Hold your ID visible</span>
                   </>
                 )}
                 <input type="file" accept="image/*" onChange={handleImageUpload("selfie")} className="hidden" />
               </label>
             </div>
           </div>
+
+          <p className="text-sm text-gray-500 mt-4">
+            Make sure all text is clearly visible and the entire document is in frame.
+          </p>
         </div>
 
         {/* Submit */}
@@ -485,7 +745,7 @@ export default function KYCPage() {
           </div>
         </header>
 
-        <main className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto">
+        <main className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
           <div className="mb-8">
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Identity Verification</h1>
             <p className="text-gray-500">Complete KYC to unlock all features</p>

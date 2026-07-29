@@ -44,13 +44,13 @@ export async function GET(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Don't expose password
-    const { password, ssn, ...safeUser } = user;
+    // Don't expose password or full SSN
+    const { password, ssn, ...safeUser } = user as any;
 
     return NextResponse.json({
       user: {
         ...safeUser,
-        ssnLast4: ssn ? `***-**-${ssn.slice(-4)}` : null,
+        ssnLast4: ssn ? `***-${ssn.slice(-4)}` : null,
       },
     });
   } catch (error) {

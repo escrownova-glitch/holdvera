@@ -16,8 +16,14 @@ export async function GET(request: NextRequest) {
         kycStatus: true,
         kycSubmittedAt: true,
         kycRejectReason: true,
+        kycFirstName: true,
+        kycMiddleName: true,
+        kycLastName: true,
         dateOfBirth: true,
+        nationality: true,
+        kycPhone: true,
         address: true,
+        addressLine2: true,
         city: true,
         state: true,
         zipCode: true,
@@ -52,9 +58,15 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const {
+      firstName,
+      middleName,
+      lastName,
       dateOfBirth,
+      nationality,
+      phone,
       ssn,
       address,
+      addressLine2,
       city,
       state,
       zipCode,
@@ -66,9 +78,17 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validate required fields
-    if (!dateOfBirth || !ssn || !address || !city || !state || !zipCode || !idType || !idFrontUrl || !idBackUrl || !selfieUrl) {
+    if (!firstName || !lastName || !dateOfBirth || !nationality || !phone || !address || !city || !country || !idType || !idFrontUrl || !selfieUrl) {
       return NextResponse.json(
-        { error: 'All fields are required' },
+        { error: 'Please fill in all required fields' },
+        { status: 400 }
+      );
+    }
+
+    // ID back required for non-passport
+    if (idType !== 'PASSPORT' && !idBackUrl) {
+      return NextResponse.json(
+        { error: 'Back of ID is required for this document type' },
         { status: 400 }
       );
     }
@@ -76,16 +96,22 @@ export async function POST(request: NextRequest) {
     const user = await prisma.user.update({
       where: { id: tokenData.userId },
       data: {
+        kycFirstName: firstName,
+        kycMiddleName: middleName || null,
+        kycLastName: lastName,
         dateOfBirth,
-        ssn, // In production, encrypt this
+        nationality,
+        kycPhone: phone,
+        ssn: ssn || null,
         address,
+        addressLine2: addressLine2 || null,
         city,
-        state,
-        zipCode,
-        country: country || 'USA',
+        state: state || null,
+        zipCode: zipCode || null,
+        country,
         idType,
         idFrontUrl,
-        idBackUrl,
+        idBackUrl: idBackUrl || null,
         selfieUrl,
         kycStatus: 'SUBMITTED',
         kycSubmittedAt: new Date(),

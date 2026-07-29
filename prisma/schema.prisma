@@ -40,13 +40,19 @@ model User {
   kycRejectReason String?
 
   // KYC personal info
+  kycFirstName  String?
+  kycMiddleName String?
+  kycLastName   String?
   dateOfBirth   String?
-  ssn           String?   // Encrypted
+  nationality   String?
+  kycPhone      String?
+  ssn           String?   // Tax ID / SSN / National ID number
   address       String?
+  addressLine2  String?
   city          String?
-  state         String?
-  zipCode       String?
-  country       String?   @default("USA")
+  state         String?   // State / Province / Region
+  zipCode       String?   // ZIP / Postal code
+  country       String?
 
   // KYC documents
   idFrontUrl    String?
