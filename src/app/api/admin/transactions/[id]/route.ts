@@ -58,7 +58,12 @@ export async function GET(
         documents: true,
         messages: {
           orderBy: { createdAt: 'asc' },
-          include: {
+          select: {
+            id: true,
+            content: true,
+            createdAt: true,
+            isSystem: true,
+            senderId: true,
             sender: {
               select: { firstName: true, lastName: true, email: true, role: true },
             },

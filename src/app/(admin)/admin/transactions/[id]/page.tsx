@@ -59,7 +59,8 @@ interface Transaction {
     id: string;
     content: string;
     createdAt: string;
-    sender: { firstName: string; lastName: string; email: string; role: string };
+    isSystem?: boolean;
+    sender: { firstName: string; lastName: string; email: string; role: string } | null;
   }[];
   timeline: { event: string; description: string; createdAt: string }[];
 }
@@ -393,13 +394,41 @@ export default function AdminTransactionDetail() {
                 </div>
               ) : (
                 transaction.messages.map((msg) => {
-                  const isAdmin = msg.sender.role === "CEO" || msg.sender.role === "ADMIN";
+                  // Handle system messages (no sender)
+                  if (!msg.sender || msg.isSystem) {
+                    return (
+                      <div key={msg.id} className="flex justify-center">
+                        <div className="max-w-[85%] bg-blue-900/30 border border-blue-700 rounded-xl px-5 py-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Shield className="w-4 h-4 text-blue-400" />
+                            <span className="text-xs font-semibold text-blue-400">HOLDVERA SYSTEM</span>
+                          </div>
+                          <div className="text-sm text-gray-300 whitespace-pre-line">
+                            {msg.content.split('\n').map((line: string, i: number) => {
+                              if (line.startsWith('**') && line.endsWith('**')) {
+                                return <p key={i} className="font-semibold text-white mt-2">{line.replace(/\*\*/g, '')}</p>;
+                              }
+                              if (line.startsWith('- ')) {
+                                return <p key={i} className="ml-3">{line}</p>;
+                              }
+                              return <p key={i}>{line}</p>;
+                            })}
+                          </div>
+                          <p className="text-xs text-blue-500 mt-2">
+                            {new Date(msg.createdAt).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  const isAdmin = msg.sender?.role === "CEO" || msg.sender?.role === "ADMIN";
                   return (
                     <div key={msg.id} className={`flex ${isAdmin ? "justify-end" : "justify-start"}`}>
                       <div className={`max-w-[70%] ${isAdmin ? "bg-[var(--gold)]" : "bg-gray-700"} rounded-lg p-3`}>
                         <div className="flex items-center gap-2 mb-1">
                           <span className={`text-xs font-medium ${isAdmin ? "text-white/80" : "text-gray-400"}`}>
-                            {msg.sender.firstName} {msg.sender.lastName}
+                            {msg.sender?.firstName} {msg.sender?.lastName}
                             {isAdmin && " (Support)"}
                           </span>
                           <span className={`text-xs ${isAdmin ? "text-white/60" : "text-gray-500"}`}>
