@@ -14,37 +14,68 @@ model User {
   firstName     String
   lastName      String
   phone         String?
-  role          String    @default("USER")
+  role          String    @default("USER")  // USER, ADMIN, CEO
   verified      Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  transactions  Transaction[]
-  sentMessages  Message[] @relation("SentMessages")
-  receivedMessages Message[] @relation("ReceivedMessages")
+  createdTransactions     Transaction[] @relation("CreatedTransactions")
+  counterpartyTransactions Transaction[] @relation("CounterpartyTransactions")
+  sentMessages            Message[] @relation("SentMessages")
+  receivedMessages        Message[] @relation("ReceivedMessages")
 }
 
 model Transaction {
   id              String    @id @default(cuid())
   transactionId   String    @unique @default(cuid())
+  title           String
   type            String
-  status          String    @default("PENDING")
+  status          String    @default("PENDING_ACCEPTANCE")
   amount          Float
   currency        String    @default("USD")
   description     String
-  buyerId         String
-  buyer           User      @relation(fields: [buyerId], references: [id])
-  sellerEmail     String
-  sellerName      String
-  escrowFee       Float
-  totalAmount     Float
+  inspectionDays  Int       @default(3)
+  terms           String?
+
+  // Creator info
+  creatorId       String
+  creator         User      @relation("CreatedTransactions", fields: [creatorId], references: [id])
+  creatorRole     String    // "buyer" or "seller"
+
+  // Counterparty info
+  counterpartyEmail String
+  counterpartyName  String
+  counterpartyId    String?
+  counterparty      User?     @relation("CounterpartyTransactions", fields: [counterpartyId], references: [id])
+
+  // Invite
+  inviteToken     String    @unique @default(cuid())
+  inviteAccepted  Boolean   @default(false)
+  inviteAcceptedAt DateTime?
+
+  // Legacy fields
+  buyerId         String?
+  sellerEmail     String?
+  sellerName      String?
+  escrowFee       Float     @default(0)
+  totalAmount     Float     @default(0)
   releaseDate     DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
+  images          TransactionImage[]
   documents       Document[]
   messages        Message[]
   timeline        TimelineEvent[]
+}
+
+model TransactionImage {
+  id            String      @id @default(cuid())
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  url           String
+  order         Int         @default(0)
+  createdAt     DateTime    @default(now())
 }
 
 model Document {

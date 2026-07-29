@@ -38,6 +38,8 @@ export default function NewTransactionPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [transactionId, setTransactionId] = useState<string | null>(null);
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [formData, setFormData] = useState({
     role: "",
     counterpartyEmail: "",
@@ -75,29 +77,43 @@ export default function NewTransactionPage() {
   const handleCreateEscrow = async () => {
     setSubmitting(true);
 
-    // Generate a transaction ID
-    const txId = `HV-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    try {
+      const token = localStorage.getItem("holdvera_token");
+      const response = await fetch("/api/transactions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ...formData,
+          images,
+        }),
+      });
 
-    // Simulate API call (replace with real API later)
-    await new Promise(resolve => setTimeout(resolve, 1500));
+      const data = await response.json();
 
-    // Store transaction locally for now
-    const transaction = {
-      id: txId,
-      ...formData,
-      images,
-      status: "pending_acceptance",
-      createdAt: new Date().toISOString(),
-      createdBy: user?.email
-    };
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to create transaction");
+      }
 
-    const existingTransactions = JSON.parse(localStorage.getItem("holdvera_transactions") || "[]");
-    existingTransactions.push(transaction);
-    localStorage.setItem("holdvera_transactions", JSON.stringify(existingTransactions));
+      setTransactionId(data.transaction.transactionId);
+      setInviteLink(data.transaction.inviteLink);
+      setSubmitted(true);
+    } catch (error) {
+      console.error("Create escrow error:", error);
+      alert("Failed to create escrow. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-    setTransactionId(txId);
-    setSubmitting(false);
-    setSubmitted(true);
+  const copyInviteLink = () => {
+    if (inviteLink) {
+      navigator.clipboard.writeText(inviteLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   useEffect(() => {
@@ -613,15 +629,50 @@ export default function NewTransactionPage() {
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">Escrow Created!</h2>
                 <p className="text-gray-500 mb-2">Your transaction has been created successfully.</p>
-                <p className="text-sm text-gray-400 mb-6">Transaction ID: <span className="font-mono font-semibold text-gray-700">{transactionId}</span></p>
+                <p className="text-sm text-gray-400 mb-4">Transaction ID: <span className="font-mono font-semibold text-gray-700">{transactionId}</span></p>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8 text-left max-w-md mx-auto">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 text-left max-w-lg mx-auto">
+                  <div className="flex gap-3">
+                    <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-green-900 font-medium">Email Sent!</p>
+                      <p className="text-sm text-green-700">
+                        An invitation email has been sent to <strong>{formData.counterpartyEmail}</strong>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Invite Link Box */}
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6 max-w-lg mx-auto">
+                  <p className="text-sm text-gray-600 mb-2 text-left font-medium">Or share this invite link manually:</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={inviteLink || ""}
+                      className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-mono text-gray-700"
+                    />
+                    <button
+                      onClick={copyInviteLink}
+                      className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                        copied
+                          ? "bg-green-500 text-white"
+                          : "bg-[var(--gold)] text-white hover:bg-[var(--gold-dark)]"
+                      }`}
+                    >
+                      {copied ? "Copied!" : "Copy"}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8 text-left max-w-lg mx-auto">
                   <div className="flex gap-3">
                     <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="text-sm text-blue-900 font-medium">What&apos;s next?</p>
                       <p className="text-sm text-blue-700">
-                        An invitation has been sent to {formData.counterpartyEmail}. Once they accept, the escrow will be active.
+                        Once {formData.counterpartyName} accepts the invitation, the escrow will become active and you&apos;ll be notified.
                       </p>
                     </div>
                   </div>
