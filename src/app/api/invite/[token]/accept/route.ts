@@ -28,12 +28,20 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const transaction = await prisma.transaction.findUnique({
-      where: { inviteToken: params.token },
-      include: {
-        creator: true,
-      },
+    const tokenValue = params.token.toUpperCase();
+
+    // Try to find by inviteCode first (short code), then by inviteToken (legacy)
+    let transaction = await prisma.transaction.findUnique({
+      where: { inviteCode: tokenValue },
+      include: { creator: true },
     });
+
+    if (!transaction) {
+      transaction = await prisma.transaction.findUnique({
+        where: { inviteToken: params.token },
+        include: { creator: true },
+      });
+    }
 
     if (!transaction) {
       return NextResponse.json(

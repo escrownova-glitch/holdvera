@@ -8,12 +8,13 @@ interface SendEmailOptions {
   to: string;
   subject: string;
   html: string;
+  from?: string; // Optional custom from address
 }
 
-export async function sendEmail({ to, subject, html }: SendEmailOptions) {
+export async function sendEmail({ to, subject, html, from }: SendEmailOptions) {
   try {
     const { data, error } = await resend.emails.send({
-      from: `HoldVera <${SUPPORT_EMAIL}>`,
+      from: from || `HoldVera <${SUPPORT_EMAIL}>`,
       to,
       subject,
       html,

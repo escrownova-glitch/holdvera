@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const inviteLink = `${APP_URL}/invite/${transaction.inviteToken}`;
+    const inviteLink = `${APP_URL}/invite/${transaction.inviteCode}`;
     const formattedAmount = `$${amountNum.toLocaleString()} ${currency || 'USD'}`;
     const creatorFullName = `${transaction.creator.firstName} ${transaction.creator.lastName}`;
 

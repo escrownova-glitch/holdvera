@@ -25,7 +25,8 @@ import {
   UserPlus,
   Copy,
   Trash2,
-  Edit
+  Edit,
+  Mail
 } from "lucide-react";
 
 interface User {
@@ -157,6 +158,17 @@ export default function AdminDashboard() {
                 <span className="font-medium">{item.label}</span>
               </button>
             ))}
+
+            {/* Email Center Link (CEO/Admin only) */}
+            {(user?.role === "CEO" || user?.role === "ADMIN") && (
+              <Link
+                href="/admin/emails"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-gray-400 hover:text-white hover:bg-gray-800"
+              >
+                <Mail className="w-5 h-5" />
+                <span className="font-medium">Email Center</span>
+              </Link>
+            )}
           </nav>
 
           {/* User Section */}

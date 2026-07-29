@@ -6,8 +6,11 @@ export async function GET(
   { params }: { params: { token: string } }
 ) {
   try {
-    const transaction = await prisma.transaction.findUnique({
-      where: { inviteToken: params.token },
+    const tokenValue = params.token.toUpperCase();
+
+    // Try to find by inviteCode first (short code), then by inviteToken (legacy)
+    let transaction = await prisma.transaction.findUnique({
+      where: { inviteCode: tokenValue },
       include: {
         creator: {
           select: { firstName: true, lastName: true, email: true },
@@ -18,6 +21,22 @@ export async function GET(
         },
       },
     });
+
+    // Fallback to inviteToken for legacy links
+    if (!transaction) {
+      transaction = await prisma.transaction.findUnique({
+        where: { inviteToken: params.token },
+        include: {
+          creator: {
+            select: { firstName: true, lastName: true, email: true },
+          },
+          images: {
+            orderBy: { order: 'asc' },
+            select: { url: true },
+          },
+        },
+      });
+    }
 
     if (!transaction) {
       return NextResponse.json(

@@ -20,6 +20,9 @@ import {
   CreditCard,
   Eye,
   Download,
+  Send,
+  MessageSquare,
+  X,
 } from "lucide-react";
 
 interface UserDetail {
@@ -66,6 +69,9 @@ export default function AdminUserDetailPage() {
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("profile");
   const [processing, setProcessing] = useState(false);
+  const [showRequestInfoModal, setShowRequestInfoModal] = useState(false);
+  const [requestInfoMessage, setRequestInfoMessage] = useState("");
+  const [selectedIssues, setSelectedIssues] = useState<string[]>([]);
 
   useEffect(() => {
     fetchUser();
@@ -93,7 +99,7 @@ export default function AdminUserDetailPage() {
     }
   };
 
-  const handleKYCAction = async (action: "approve" | "reject", reason?: string) => {
+  const handleKYCAction = async (action: "approve" | "reject" | "request_info", reason?: string) => {
     if (!user) return;
     setProcessing(true);
 
@@ -109,11 +115,17 @@ export default function AdminUserDetailPage() {
           userId: user.id,
           action,
           reason: reason || undefined,
+          issues: action === "request_info" ? selectedIssues : undefined,
         }),
       });
 
       if (res.ok) {
         await fetchUser();
+        if (action === "request_info") {
+          setShowRequestInfoModal(false);
+          setRequestInfoMessage("");
+          setSelectedIssues([]);
+        }
       } else {
         const data = await res.json();
         alert(data.error || "Action failed");
@@ -124,6 +136,17 @@ export default function AdminUserDetailPage() {
       setProcessing(false);
     }
   };
+
+  const kycIssueOptions = [
+    { id: "id_blurry", label: "ID photo is blurry or unreadable" },
+    { id: "id_expired", label: "ID appears to be expired" },
+    { id: "id_mismatch", label: "Name on ID doesn't match account" },
+    { id: "selfie_unclear", label: "Selfie is unclear or doesn't match ID" },
+    { id: "address_incomplete", label: "Address information is incomplete" },
+    { id: "dob_mismatch", label: "Date of birth doesn't match ID" },
+    { id: "missing_back", label: "Back of ID is required" },
+    { id: "ssn_invalid", label: "SSN/Tax ID format is invalid" },
+  ];
 
   if (loading) {
     return (
@@ -308,9 +331,18 @@ export default function AdminUserDetailPage() {
                   <button
                     onClick={() => handleKYCAction("approve")}
                     disabled={processing}
-                    className="flex-1 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium disabled:opacity-50"
+                    className="flex-1 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium disabled:opacity-50 flex items-center justify-center gap-2"
                   >
-                    {processing ? "Processing..." : "Approve KYC"}
+                    <CheckCircle className="w-4 h-4" />
+                    {processing ? "Processing..." : "Approve"}
+                  </button>
+                  <button
+                    onClick={() => setShowRequestInfoModal(true)}
+                    disabled={processing}
+                    className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    Request Info
                   </button>
                   <button
                     onClick={() => {
@@ -318,9 +350,10 @@ export default function AdminUserDetailPage() {
                       if (reason) handleKYCAction("reject", reason);
                     }}
                     disabled={processing}
-                    className="flex-1 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium disabled:opacity-50"
+                    className="flex-1 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium disabled:opacity-50 flex items-center justify-center gap-2"
                   >
-                    Reject KYC
+                    <XCircle className="w-4 h-4" />
+                    Reject
                   </button>
                 </div>
               )}
@@ -480,6 +513,90 @@ export default function AdminUserDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Request More Info Modal */}
+      {showRequestInfoModal && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-800 rounded-2xl w-full max-w-lg border border-gray-700 shadow-2xl">
+            <div className="flex items-center justify-between p-5 border-b border-gray-700">
+              <h3 className="text-lg font-semibold text-white">Request Additional Information</h3>
+              <button
+                onClick={() => setShowRequestInfoModal(false)}
+                className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-gray-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <p className="text-gray-400 text-sm">
+                Select the issues that need to be addressed by <strong className="text-white">{user.firstName} {user.lastName}</strong>:
+              </p>
+
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {kycIssueOptions.map((issue) => (
+                  <label
+                    key={issue.id}
+                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                      selectedIssues.includes(issue.id)
+                        ? "border-[var(--gold)] bg-[var(--gold)]/10"
+                        : "border-gray-600 hover:border-gray-500"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedIssues.includes(issue.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedIssues([...selectedIssues, issue.id]);
+                        } else {
+                          setSelectedIssues(selectedIssues.filter(i => i !== issue.id));
+                        }
+                      }}
+                      className="w-4 h-4 rounded border-gray-500 text-[var(--gold)] focus:ring-[var(--gold)]"
+                    />
+                    <span className="text-white text-sm">{issue.label}</span>
+                  </label>
+                ))}
+              </div>
+
+              <div>
+                <label className="block text-gray-400 text-sm mb-2">Additional message (optional):</label>
+                <textarea
+                  value={requestInfoMessage}
+                  onChange={(e) => setRequestInfoMessage(e.target.value)}
+                  placeholder="Add any specific instructions..."
+                  rows={3}
+                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--gold)] resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 p-5 border-t border-gray-700">
+              <button
+                onClick={() => setShowRequestInfoModal(false)}
+                className="flex-1 py-2.5 border border-gray-600 text-gray-300 rounded-lg font-medium hover:bg-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const message = [
+                    ...selectedIssues.map(id => kycIssueOptions.find(o => o.id === id)?.label),
+                    requestInfoMessage
+                  ].filter(Boolean).join('\n');
+                  handleKYCAction("request_info", message);
+                }}
+                disabled={processing || selectedIssues.length === 0}
+                className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <Send className="w-4 h-4" />
+                {processing ? "Sending..." : "Send Request"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

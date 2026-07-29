@@ -192,3 +192,34 @@ model SiteSettings {
   address         String  @default("Arlington, Virginia, USA")
   escrowFeePercent Float  @default(2.5)
 }
+
+model AdminEmail {
+  id          String    @id @default(cuid())
+  fromEmail   String    // ceo@holdvera.site or support@holdvera.site
+  toEmail     String
+  toName      String?
+  subject     String
+  body        String    // Plain text body
+  htmlBody    String?   // Rendered HTML with template
+  status      String    @default("SENT") // DRAFT, SENT, FAILED
+  direction   String    // OUTBOUND or INBOUND (for future)
+  parentId    String?   // For reply chains
+  parent      AdminEmail? @relation("EmailReplies", fields: [parentId], references: [id])
+  replies     AdminEmail[] @relation("EmailReplies")
+  templateId  String?   // Which template was used
+  sentBy      String?   // Admin user ID who sent it
+  sentAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model EmailTemplate {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  subject     String
+  body        String    // Template with {{placeholders}}
+  category    String    @default("general") // general, kyc, transaction, support
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}

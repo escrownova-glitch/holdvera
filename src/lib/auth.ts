@@ -54,3 +54,10 @@ export async function requireAdminOrAgent(request: NextRequest) {
   if (user.role === 'AGENT' && user.agentStatus !== 'ACTIVE') return null;
   return user;
 }
+
+export async function requireAdminOrCEO(request: NextRequest) {
+  const user = await requireAuth(request);
+  if (!user) return null;
+  if (user.role !== 'ADMIN' && user.role !== 'CEO') return null;
+  return user;
+}
