@@ -98,13 +98,32 @@ export async function POST(
       },
     });
 
-    // Create welcome message in chat
+    // Create system welcome message in chat
+    const creatorRole = transaction.creatorRole === 'buyer' ? 'Buyer' : 'Seller';
+    const counterpartyRole = transaction.creatorRole === 'buyer' ? 'Seller' : 'Buyer';
+
     await prisma.message.create({
       data: {
         transactionId: transaction.id,
-        senderId: transaction.creatorId,
-        receiverId: user.userId,
-        content: `Welcome to the escrow transaction for "${transaction.title}". This chat is monitored by HoldVera support to ensure a safe transaction. Please communicate all transaction details here.`,
+        senderId: null, // System message
+        receiverId: null, // Broadcast to all
+        isSystem: true,
+        content: `Welcome to your HoldVera Escrow Transaction!
+
+**Participants:**
+- ${transaction.creator.firstName} ${transaction.creator.lastName} (${creatorRole})
+- ${acceptingUser.firstName} ${acceptingUser.lastName} (${counterpartyRole})
+
+**Transaction Details:**
+- Title: ${transaction.title}
+- Amount: $${transaction.amount.toLocaleString()} ${transaction.currency}
+- Inspection Period: ${transaction.inspectionDays} days
+
+This chat is monitored by HoldVera support to ensure a safe and secure transaction. All communications regarding this escrow should take place here.
+
+Please coordinate the next steps and feel free to reach out if you have any questions!
+
+— HoldVera Team`,
       },
     });
 

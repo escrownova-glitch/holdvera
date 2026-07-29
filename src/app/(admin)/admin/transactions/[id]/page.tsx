@@ -16,7 +16,10 @@ import {
   MessageSquare,
   Shield,
   AlertCircle,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Upload,
+  Eye,
+  File
 } from "lucide-react";
 
 interface Transaction {
@@ -71,10 +74,60 @@ export default function AdminTransactionDetail() {
   const [activeTab, setActiveTab] = useState<"details" | "chat" | "documents" | "timeline">("details");
   const [actionLoading, setActionLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [docVisibility, setDocVisibility] = useState("BOTH_PARTIES");
+  const [allDocuments, setAllDocuments] = useState<any[]>([]);
 
   useEffect(() => {
     fetchTransaction();
+    fetchDocuments();
   }, []);
+
+  const fetchDocuments = async () => {
+    const token = localStorage.getItem("holdvera_token");
+    const res = await fetch(`/api/transactions/${params.id}/documents`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setAllDocuments(data.documents || []);
+    }
+  };
+
+  const handleAdminDocUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert("File size must be less than 10MB");
+      return;
+    }
+
+    setUploadingDoc(true);
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const base64 = event.target?.result as string;
+      const token = localStorage.getItem("holdvera_token");
+
+      await fetch(`/api/transactions/${params.id}/documents`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: file.name,
+          url: base64,
+          type: file.type.includes("pdf") ? "pdf" : "image",
+          visibility: docVisibility,
+        }),
+      });
+
+      await fetchDocuments();
+      setUploadingDoc(false);
+    };
+    reader.readAsDataURL(file);
+  };
 
   useEffect(() => {
     if (activeTab === "chat") {
@@ -389,35 +442,116 @@ export default function AdminTransactionDetail() {
 
         {/* Documents Tab */}
         {activeTab === "documents" && (
-          <div className="bg-gray-800 rounded-xl border border-gray-700 p-6">
-            <h3 className="text-white font-semibold mb-4">Property Images</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {transaction.images.map((img, i) => (
-                <a key={i} href={img.url} target="_blank" rel="noopener noreferrer">
-                  <img src={img.url} alt={`Image ${i + 1}`} className="w-full h-40 object-cover rounded-lg hover:opacity-80 transition-opacity" />
-                </a>
-              ))}
+          <div className="space-y-6">
+            {/* Admin Upload Section */}
+            <div className="bg-gray-800 rounded-xl border border-gray-700 p-6">
+              <h3 className="text-white font-semibold mb-4">Upload Document</h3>
+              <div className="flex flex-wrap gap-4 items-end">
+                <div>
+                  <label className="block text-gray-400 text-sm mb-2">Visibility</label>
+                  <select
+                    value={docVisibility}
+                    onChange={(e) => setDocVisibility(e.target.value)}
+                    className="px-4 py-2.5 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[var(--gold)]"
+                  >
+                    <option value="ADMIN_ONLY">Admin Only</option>
+                    <option value="CREATOR_ONLY">Creator Only ({transaction.creator.firstName})</option>
+                    <option value="COUNTERPARTY_ONLY">Counterparty Only ({transaction.counterparty?.firstName || transaction.counterpartyName})</option>
+                    <option value="BOTH_PARTIES">Both Parties</option>
+                    <option value="ALL">Everyone</option>
+                  </select>
+                </div>
+                <label className={`flex items-center gap-2 px-4 py-2.5 bg-[var(--gold)] text-white rounded-lg cursor-pointer hover:bg-[var(--gold-dark)] ${uploadingDoc ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                  {uploadingDoc ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" />
+                      Upload Document
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept=".pdf,image/*"
+                    onChange={handleAdminDocUpload}
+                    disabled={uploadingDoc}
+                    className="hidden"
+                  />
+                </label>
+              </div>
             </div>
 
-            {transaction.documents.length > 0 && (
-              <>
-                <h3 className="text-white font-semibold mt-8 mb-4">Documents</h3>
-                <div className="space-y-2">
-                  {transaction.documents.map((doc) => (
-                    <a
-                      key={doc.id}
-                      href={doc.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
-                    >
-                      <FileText className="w-5 h-5 text-gray-400" />
-                      <span className="text-white">{doc.name}</span>
+            {/* Property Images */}
+            {transaction.images.length > 0 && (
+              <div className="bg-gray-800 rounded-xl border border-gray-700 p-6">
+                <h3 className="text-white font-semibold mb-4">Property Images</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {transaction.images.map((img, i) => (
+                    <a key={i} href={img.url} target="_blank" rel="noopener noreferrer">
+                      <img src={img.url} alt={`Image ${i + 1}`} className="w-full h-40 object-cover rounded-lg hover:opacity-80 transition-opacity" />
                     </a>
                   ))}
                 </div>
-              </>
+              </div>
             )}
+
+            {/* All Documents */}
+            <div className="bg-gray-800 rounded-xl border border-gray-700 p-6">
+              <h3 className="text-white font-semibold mb-4">All Documents ({allDocuments.length})</h3>
+              {allDocuments.length > 0 ? (
+                <div className="space-y-3">
+                  {allDocuments.map((doc) => (
+                    <div key={doc.id} className="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${doc.type === 'pdf' ? 'bg-red-500/20' : 'bg-blue-500/20'}`}>
+                          {doc.type === 'pdf' ? (
+                            <FileText className="w-5 h-5 text-red-400" />
+                          ) : (
+                            <ImageIcon className="w-5 h-5 text-blue-400" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-white font-medium">{doc.name}</p>
+                          <p className="text-gray-500 text-xs">
+                            {new Date(doc.uploadedAt).toLocaleDateString()} · {doc.uploadedByRole === 'ADMIN' ? 'Admin' : 'Party'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          doc.visibility === 'ADMIN_ONLY' ? 'bg-gray-600 text-gray-300' :
+                          doc.visibility === 'BOTH_PARTIES' ? 'bg-green-500/20 text-green-400' :
+                          doc.visibility === 'ALL' ? 'bg-blue-500/20 text-blue-400' :
+                          'bg-amber-500/20 text-amber-400'
+                        }`}>
+                          {doc.visibility === 'ADMIN_ONLY' && 'Admin Only'}
+                          {doc.visibility === 'CREATOR_ONLY' && 'Creator Only'}
+                          {doc.visibility === 'COUNTERPARTY_ONLY' && 'Counterparty Only'}
+                          {doc.visibility === 'BOTH_PARTIES' && 'Both Parties'}
+                          {doc.visibility === 'ALL' && 'Everyone'}
+                        </span>
+                        <a
+                          href={doc.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 text-gray-400 hover:text-[var(--gold)] transition-colors"
+                        >
+                          <Eye className="w-5 h-5" />
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <File className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                  <p className="text-gray-400">No documents uploaded yet</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

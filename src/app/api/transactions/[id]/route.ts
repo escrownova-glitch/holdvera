@@ -40,7 +40,12 @@ export async function GET(
         },
         messages: {
           orderBy: { createdAt: 'asc' },
-          include: {
+          select: {
+            id: true,
+            content: true,
+            senderId: true,
+            isSystem: true,
+            createdAt: true,
             sender: {
               select: { firstName: true, lastName: true },
             },

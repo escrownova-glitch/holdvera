@@ -26,6 +26,9 @@ import {
   Image as ImageIcon,
   Download,
   ExternalLink,
+  Upload,
+  File,
+  Eye,
 } from "lucide-react";
 
 interface UserData {
@@ -73,9 +76,10 @@ interface TransactionData {
   messages: {
     id: string;
     content: string;
-    senderId: string;
+    senderId: string | null;
+    isSystem: boolean;
     createdAt: string;
-    sender: { firstName: string; lastName: string };
+    sender: { firstName: string; lastName: string } | null;
   }[];
   timeline: {
     id: string;
@@ -93,10 +97,12 @@ export default function TransactionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"details" | "chat" | "timeline">("details");
+  const [activeTab, setActiveTab] = useState<"details" | "chat" | "documents" | "timeline">("details");
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("holdvera_user");
@@ -104,7 +110,66 @@ export default function TransactionDetailPage() {
       setUser(JSON.parse(storedUser));
     }
     fetchTransaction();
+    fetchDocuments();
   }, [params.id]);
+
+  const fetchDocuments = async () => {
+    try {
+      const token = localStorage.getItem("holdvera_token");
+      const res = await fetch(`/api/transactions/${params.id}/documents`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDocuments(data.documents || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch documents");
+    }
+  };
+
+  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert("File size must be less than 10MB");
+      return;
+    }
+
+    setUploadingDoc(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64 = event.target?.result as string;
+        const token = localStorage.getItem("holdvera_token");
+
+        const res = await fetch(`/api/transactions/${params.id}/documents`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            name: file.name,
+            url: base64,
+            type: file.type.includes("pdf") ? "pdf" : "image",
+          }),
+        });
+
+        if (res.ok) {
+          await fetchDocuments();
+        } else {
+          alert("Failed to upload document");
+        }
+        setUploadingDoc(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error("Upload error:", err);
+      setUploadingDoc(false);
+    }
+  };
 
   const fetchTransaction = async () => {
     try {
@@ -329,10 +394,11 @@ export default function TransactionDetailPage() {
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-2 mb-6">
+          <div className="flex gap-2 mb-6 flex-wrap">
             {[
               { key: "details", label: "Details", icon: FileText },
               { key: "chat", label: "Messages", icon: MessageSquare },
+              { key: "documents", label: "Documents", icon: File },
               { key: "timeline", label: "Timeline", icon: Clock },
             ].map((tab) => (
               <button
@@ -439,11 +505,40 @@ export default function TransactionDetailPage() {
               <div className="h-96 overflow-y-auto p-4 space-y-4">
                 {transaction.messages.length > 0 ? (
                   transaction.messages.map((msg) => {
+                    // System message
+                    if (msg.isSystem) {
+                      return (
+                        <div key={msg.id} className="flex justify-center">
+                          <div className="max-w-[85%] bg-blue-50 border border-blue-200 rounded-xl px-5 py-4">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Shield className="w-4 h-4 text-blue-600" />
+                              <span className="text-xs font-semibold text-blue-600">HOLDVERA</span>
+                            </div>
+                            <div className="text-sm text-gray-700 whitespace-pre-line">
+                              {msg.content.split('\n').map((line, i) => {
+                                if (line.startsWith('**') && line.endsWith('**')) {
+                                  return <p key={i} className="font-semibold text-gray-900 mt-2">{line.replace(/\*\*/g, '')}</p>;
+                                }
+                                if (line.startsWith('- ')) {
+                                  return <p key={i} className="ml-3">{line}</p>;
+                                }
+                                return <p key={i}>{line}</p>;
+                              })}
+                            </div>
+                            <p className="text-xs text-blue-400 mt-2">
+                              {new Date(msg.createdAt).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    // Regular message
                     const isMe = msg.senderId === user?.id;
                     return (
                       <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                         <div className={`max-w-[70%] ${isMe ? "bg-[var(--gold)] text-white" : "bg-gray-100 text-gray-900"} rounded-2xl px-4 py-3`}>
-                          {!isMe && <p className="text-xs font-medium mb-1 opacity-70">{msg.sender.firstName}</p>}
+                          {!isMe && msg.sender && <p className="text-xs font-medium mb-1 opacity-70">{msg.sender.firstName}</p>}
                           <p className="text-sm">{msg.content}</p>
                           <p className={`text-xs mt-1 ${isMe ? "text-white/70" : "text-gray-500"}`}>
                             {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -479,6 +574,83 @@ export default function TransactionDetailPage() {
                   </button>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Documents Tab */}
+          {activeTab === "documents" && (
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="font-semibold text-gray-900">Documents</h3>
+                  <p className="text-sm text-gray-500">Documents uploaded by parties are only visible to admin for security.</p>
+                </div>
+                <label className={`flex items-center gap-2 px-4 py-2 bg-[var(--gold)] text-white rounded-lg cursor-pointer hover:bg-[var(--gold-dark)] ${uploadingDoc ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                  {uploadingDoc ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" />
+                      Upload Document
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept=".pdf,image/*"
+                    onChange={handleDocumentUpload}
+                    disabled={uploadingDoc}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              {documents.length > 0 ? (
+                <div className="space-y-3">
+                  {documents.map((doc) => (
+                    <div key={doc.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${doc.type === 'pdf' ? 'bg-red-100' : 'bg-blue-100'}`}>
+                          {doc.type === 'pdf' ? (
+                            <FileText className={`w-5 h-5 text-red-600`} />
+                          ) : (
+                            <ImageIcon className={`w-5 h-5 text-blue-600`} />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">{doc.name}</p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(doc.uploadedAt).toLocaleDateString()} · {doc.uploadedByRole === 'ADMIN' ? 'Admin' : 'Party'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">
+                          {doc.visibility === 'ADMIN_ONLY' && 'Admin Only'}
+                          {doc.visibility === 'BOTH_PARTIES' && 'Both Parties'}
+                          {doc.visibility === 'ALL' && 'Everyone'}
+                        </span>
+                        <a
+                          href={doc.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 text-gray-400 hover:text-[var(--gold)] transition-colors"
+                        >
+                          <Eye className="w-5 h-5" />
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <File className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500 mb-2">No documents yet.</p>
+                  <p className="text-sm text-gray-400">Upload PDFs or images related to this transaction.</p>
+                </div>
+              )}
             </div>
           )}
 

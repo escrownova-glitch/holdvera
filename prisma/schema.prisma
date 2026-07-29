@@ -145,7 +145,10 @@ model Document {
   transaction   Transaction @relation(fields: [transactionId], references: [id])
   name          String
   url           String
-  type          String
+  type          String      // pdf, image, etc.
+  uploadedBy    String      // User ID or "ADMIN"
+  uploadedByRole String     @default("USER") // USER, ADMIN
+  visibility    String      @default("ADMIN_ONLY") // ADMIN_ONLY, CREATOR_ONLY, COUNTERPARTY_ONLY, BOTH_PARTIES, ALL
   uploadedAt    DateTime    @default(now())
 }
 
@@ -153,11 +156,12 @@ model Message {
   id            String      @id @default(cuid())
   transactionId String?
   transaction   Transaction? @relation(fields: [transactionId], references: [id])
-  senderId      String
-  sender        User        @relation("SentMessages", fields: [senderId], references: [id])
-  receiverId    String
-  receiver      User        @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  senderId      String?     // Null for system messages
+  sender        User?       @relation("SentMessages", fields: [senderId], references: [id])
+  receiverId    String?     // Null for broadcast messages
+  receiver      User?       @relation("ReceivedMessages", fields: [receiverId], references: [id])
   content       String
+  isSystem      Boolean     @default(false) // True for HoldVera system messages
   read          Boolean     @default(false)
   createdAt     DateTime    @default(now())
 }
