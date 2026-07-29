@@ -89,9 +89,17 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const admin = await requireAdmin(request);
+    const admin = await requireAdminOrAgent(request);
     if (!admin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check agent permissions for transaction actions
+    if (admin.role === 'AGENT') {
+      const permissions = admin.agentPermissions ? JSON.parse(admin.agentPermissions) : {};
+      if (!permissions.canCompleteTransactions && !permissions.canCancelTransactions) {
+        return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
+      }
     }
 
     const body = await request.json();
