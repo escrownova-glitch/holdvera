@@ -30,16 +30,20 @@ interface User {
 
 interface Transaction {
   id: string;
+  transactionId: string;
   title: string;
   description: string;
-  amount: string;
+  amount: number;
   currency: string;
-  role: string;
+  creatorRole: string;
+  creatorId: string;
   counterpartyName: string;
   counterpartyEmail: string;
   status: string;
   createdAt: string;
-  inspectionDays: string;
+  inspectionDays: number;
+  creator: { firstName: string; lastName: string; email: string };
+  counterparty: { firstName: string; lastName: string; email: string } | null;
 }
 
 export default function TransactionsPage() {
@@ -56,35 +60,55 @@ export default function TransactionsPage() {
       setUser(JSON.parse(storedUser));
     }
 
-    const storedTransactions = localStorage.getItem("holdvera_transactions");
-    if (storedTransactions) {
-      setTransactions(JSON.parse(storedTransactions));
-    }
-
-    setLoading(false);
+    fetchTransactions();
   }, []);
+
+  const fetchTransactions = async () => {
+    try {
+      const token = localStorage.getItem("holdvera_token");
+      const res = await fetch("/api/transactions", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setTransactions(data.transactions || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch transactions:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "pending_acceptance":
-        return { label: "Pending Acceptance", color: "bg-amber-100 text-amber-800", icon: Clock };
-      case "active":
+      case "PENDING_ACCEPTANCE":
+        return { label: "Pending", color: "bg-amber-100 text-amber-800", icon: Clock };
+      case "ACTIVE":
         return { label: "Active", color: "bg-blue-100 text-blue-800", icon: Clock };
-      case "completed":
+      case "AWAITING_PAYMENT":
+        return { label: "Awaiting Payment", color: "bg-purple-100 text-purple-800", icon: Clock };
+      case "FUNDED":
+        return { label: "Funded", color: "bg-green-100 text-green-800", icon: CheckCircle };
+      case "COMPLETED":
         return { label: "Completed", color: "bg-green-100 text-green-800", icon: CheckCircle };
-      case "cancelled":
+      case "CANCELLED":
         return { label: "Cancelled", color: "bg-red-100 text-red-800", icon: XCircle };
+      case "DISPUTED":
+        return { label: "Disputed", color: "bg-red-100 text-red-800", icon: AlertCircle };
       default:
-        return { label: "Unknown", color: "bg-gray-100 text-gray-800", icon: AlertCircle };
+        return { label: status, color: "bg-gray-100 text-gray-800", icon: AlertCircle };
     }
   };
 
   const filteredTransactions = transactions.filter(tx => {
-    const matchesFilter = filter === "all" || tx.status === filter ||
-      (filter === "active" && tx.status === "pending_acceptance");
+    const matchesFilter = filter === "all" ||
+      tx.status.toLowerCase() === filter ||
+      (filter === "active" && (tx.status === "ACTIVE" || tx.status === "PENDING_ACCEPTANCE"));
     const matchesSearch = tx.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       tx.counterpartyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tx.id.toLowerCase().includes(searchQuery.toLowerCase());
+      tx.transactionId.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
@@ -266,15 +290,22 @@ export default function TransactionsPage() {
                 {filteredTransactions.map((tx) => {
                   const status = getStatusBadge(tx.status);
                   const StatusIcon = status.icon;
+                  const storedUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem("holdvera_user") || "{}") : {};
+                  const isCreator = tx.creatorId === storedUser.id;
+                  const myRole = isCreator ? tx.creatorRole : (tx.creatorRole === "buyer" ? "seller" : "buyer");
+                  const otherPartyName = isCreator
+                    ? (tx.counterparty ? `${tx.counterparty.firstName} ${tx.counterparty.lastName}` : tx.counterpartyName)
+                    : `${tx.creator.firstName} ${tx.creator.lastName}`;
+
                   return (
-                    <div key={tx.id} className="p-5 hover:bg-gray-50 transition-colors">
+                    <Link key={tx.id} href={`/dashboard/transactions/${tx.id}`} className="block p-5 hover:bg-gray-50 transition-colors">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="flex items-start gap-4">
                           <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                            tx.role === "buyer" ? "bg-blue-100" : "bg-green-100"
+                            myRole === "buyer" ? "bg-blue-100" : "bg-green-100"
                           }`}>
-                            {tx.role === "buyer" ? (
-                              <ArrowUpRight className={`w-5 h-5 ${tx.role === "buyer" ? "text-blue-600" : "text-green-600"}`} />
+                            {myRole === "buyer" ? (
+                              <ArrowUpRight className="w-5 h-5 text-blue-600" />
                             ) : (
                               <ArrowDownLeft className="w-5 h-5 text-green-600" />
                             )}
@@ -288,24 +319,24 @@ export default function TransactionsPage() {
                               </span>
                             </div>
                             <p className="text-sm text-gray-500 truncate">
-                              {tx.role === "buyer" ? "Buying from" : "Selling to"}: {tx.counterpartyName}
+                              {myRole === "buyer" ? "Buying from" : "Selling to"}: {otherPartyName}
                             </p>
                             <p className="text-xs text-gray-400 mt-1">
-                              ID: {tx.id} • {new Date(tx.createdAt).toLocaleDateString()}
+                              {tx.transactionId} • {new Date(tx.createdAt).toLocaleDateString()}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="text-right">
                             <p className="text-lg font-bold text-gray-900">
-                              ${parseFloat(tx.amount).toLocaleString()} {tx.currency}
+                              ${tx.amount.toLocaleString()} {tx.currency}
                             </p>
                             <p className="text-xs text-gray-500">{tx.inspectionDays} day inspection</p>
                           </div>
                           <ChevronRight className="w-5 h-5 text-gray-400" />
                         </div>
                       </div>
-                    </div>
+                    </Link>
                   );
                 })}
               </div>
