@@ -1,19 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
-import { requireAdmin } from '@/lib/auth';
+import { db as prisma } from '@/lib/db';
+import { requireAdminOrAgent } from '@/lib/auth';
 import { sendEmail } from '@/lib/email';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://holdvera.site';
 
 export async function POST(request: NextRequest) {
   try {
-    const admin = await requireAdmin(request);
+    const admin = await requireAdminOrAgent(request);
     if (!admin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
     const { userId, action, reason } = body;
+
+    // Check agent permissions for KYC actions
+    if (admin.role === 'AGENT') {
+      const permissions = admin.agentPermissions ? JSON.parse(admin.agentPermissions) : {};
+      if (action === 'approve' && !permissions.canApproveKYC) {
+        return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
+      }
+      if (action === 'reject' && !permissions.canRejectKYC) {
+        return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
+      }
+    }
 
     if (!userId || !action) {
       return NextResponse.json(

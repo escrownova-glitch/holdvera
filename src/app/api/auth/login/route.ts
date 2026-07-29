@@ -54,6 +54,8 @@ export async function POST(request: NextRequest) {
         firstName: user.firstName,
         lastName: user.lastName,
         role: user.role,
+        agentPermissions: user.agentPermissions,
+        agentStatus: user.agentStatus,
       },
     });
 

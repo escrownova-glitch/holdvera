@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { db as prisma } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
 import { sendEmail } from '@/lib/email';
 import crypto from 'crypto';

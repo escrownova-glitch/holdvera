@@ -1,15 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
-import { requireAdmin } from '@/lib/auth';
+import { db as prisma } from '@/lib/db';
+import { requireAdminOrAgent } from '@/lib/auth';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const admin = await requireAdmin(request);
+    const admin = await requireAdminOrAgent(request);
     if (!admin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check agent permissions
+    if (admin.role === 'AGENT') {
+      const permissions = admin.agentPermissions ? JSON.parse(admin.agentPermissions) : {};
+      if (!permissions.canSendMessages) {
+        return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
+      }
     }
 
     const body = await request.json();

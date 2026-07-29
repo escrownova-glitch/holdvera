@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import jwt from 'jsonwebtoken';
-import { prisma } from '@/lib/db';
+import { db as prisma } from '@/lib/db';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'holdvera-secret';
 
@@ -44,5 +44,13 @@ export async function requireCEO(request: NextRequest) {
   const user = await requireAuth(request);
   if (!user) return null;
   if (user.role !== 'CEO') return null;
+  return user;
+}
+
+export async function requireAdminOrAgent(request: NextRequest) {
+  const user = await requireAuth(request);
+  if (!user) return null;
+  if (user.role !== 'ADMIN' && user.role !== 'CEO' && user.role !== 'AGENT') return null;
+  if (user.role === 'AGENT' && user.agentStatus !== 'ACTIVE') return null;
   return user;
 }
