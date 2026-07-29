@@ -90,9 +90,9 @@ export async function sendEscrowInviteEmail(
   creatorName: string,
   transactionTitle: string,
   amount: string,
-  inviteToken: string
+  inviteCode: string
 ) {
-  const inviteLink = `${APP_URL}/invite/${inviteToken}`;
+  const inviteLink = `${APP_URL}/invite/${inviteCode}`;
 
   const html = `
     <!DOCTYPE html>

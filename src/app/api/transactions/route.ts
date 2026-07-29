@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
         creatorFullName,
         title,
         formattedAmount,
-        transaction.inviteToken
+        transaction.inviteCode!
       ),
       // Email to creator
       sendTransactionCreatedEmail(
