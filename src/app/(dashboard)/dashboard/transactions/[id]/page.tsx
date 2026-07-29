@@ -113,6 +113,17 @@ export default function TransactionDetailPage() {
     fetchDocuments();
   }, [params.id]);
 
+  // Poll for new messages every 5 seconds when on chat tab
+  useEffect(() => {
+    if (activeTab !== "chat") return;
+
+    const interval = setInterval(() => {
+      fetchTransaction();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [activeTab, params.id]);
+
   const fetchDocuments = async () => {
     try {
       const token = localStorage.getItem("holdvera_token");

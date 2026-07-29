@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { sendEmail } from "@/lib/email";
 import bcrypt from "bcryptjs";
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://holdvera.site';
 
 function generateOTP(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -85,6 +88,20 @@ export async function POST(request: NextRequest) {
           </div>
         `,
       }),
+    });
+
+    // Notify admin of new signup
+    await sendEmail({
+      to: 'ceo@holdvera.site',
+      subject: `[NEW SIGNUP] ${firstName} ${lastName} registered`,
+      html: `
+        <h2>New User Registration</h2>
+        <p><strong>Name:</strong> ${firstName} ${lastName}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
+        <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+        <p><a href="${APP_URL}/admin/users">View in Admin Panel</a></p>
+      `,
     });
 
     return NextResponse.json({

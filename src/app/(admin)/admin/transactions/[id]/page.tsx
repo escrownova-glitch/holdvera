@@ -84,6 +84,17 @@ export default function AdminTransactionDetail() {
     fetchDocuments();
   }, []);
 
+  // Poll for new messages every 5 seconds when on chat tab
+  useEffect(() => {
+    if (activeTab !== "chat") return;
+
+    const interval = setInterval(() => {
+      fetchTransaction();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [activeTab]);
+
   const fetchDocuments = async () => {
     const token = localStorage.getItem("holdvera_token");
     const res = await fetch(`/api/transactions/${params.id}/documents`, {
