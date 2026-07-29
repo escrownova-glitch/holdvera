@@ -44,7 +44,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable} h-full antialiased`}>
       <head>
-        <link rel="icon" href="/images/logo.png" type="image/png" />
+        <link rel="icon" href="/images/logo.png" type="image/png" sizes="any" />
+        <link rel="icon" href="/favicon.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/images/logo.png" />
       </head>
       <body className="min-h-full flex flex-col bg-cream">{children}</body>
     </html>
