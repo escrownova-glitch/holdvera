@@ -54,6 +54,17 @@ model User {
   selfieUrl     String?
   idType        String?   // DRIVERS_LICENSE, PASSPORT, STATE_ID
 
+  // OTP verification
+  emailVerified     Boolean   @default(false)
+  otpCode           String?
+  otpExpiresAt      DateTime?
+  otpAttempts       Int       @default(0)
+  otpLastSentAt     DateTime?
+
+  // Session management
+  lastActiveAt      DateTime?
+  sessionToken      String?
+
   createdTransactions     Transaction[] @relation("CreatedTransactions")
   counterpartyTransactions Transaction[] @relation("CounterpartyTransactions")
   sentMessages            Message[] @relation("SentMessages")

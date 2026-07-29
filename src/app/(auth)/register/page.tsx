@@ -67,7 +67,8 @@ export default function RegisterPage() {
         return;
       }
 
-      router.push("/login?registered=true");
+      // Redirect to verify email page
+      router.push(`/verify-email?email=${encodeURIComponent(formData.email)}`);
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {

@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
 
+function generateOTP(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -26,6 +30,8 @@ export async function POST(request: NextRequest) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
+    const otp = generateOTP();
+    const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     const user = await db.user.create({
       data: {
@@ -34,9 +40,15 @@ export async function POST(request: NextRequest) {
         email: email.toLowerCase(),
         phone,
         password: hashedPassword,
+        emailVerified: false,
+        otpCode: otp,
+        otpExpiresAt: otpExpiresAt,
+        otpLastSentAt: new Date(),
+        otpAttempts: 1,
       },
     });
 
+    // Send OTP verification email
     await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -46,7 +58,7 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         from: "HoldVera <support@holdvera.site>",
         to: email,
-        subject: "Welcome to HoldVera - Account Created",
+        subject: `Your HoldVera Verification Code: ${otp}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background: linear-gradient(135deg, #D4AF37 0%, #C9A227 50%, #B8860B 100%); padding: 40px; text-align: center;">
@@ -56,29 +68,15 @@ export async function POST(request: NextRequest) {
             <div style="padding: 40px; background: #f9f9f9;">
               <h2 style="color: #1a1a1a; margin-top: 0;">Hello ${firstName},</h2>
               <p style="color: #666; line-height: 1.6;">
-                Thank you for creating your HoldVera account. You're now ready to start making secure escrow transactions with confidence.
+                Thank you for creating your HoldVera account. Please verify your email address using the code below:
               </p>
-              <p style="color: #666; line-height: 1.6;">
-                With HoldVera, you can:
-              </p>
-              <ul style="color: #666; line-height: 2;">
-                <li>Create secure escrow transactions</li>
-                <li>Track your transactions in real-time</li>
-                <li>Communicate with buyers and sellers safely</li>
-                <li>Access 24/7 customer support</li>
-              </ul>
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${process.env.NEXT_PUBLIC_APP_URL}/login"
-                   style="background: linear-gradient(135deg, #D4AF37 0%, #C9A227 50%, #B8860B 100%);
-                          color: white;
-                          padding: 15px 40px;
-                          text-decoration: none;
-                          border-radius: 8px;
-                          font-weight: bold;
-                          display: inline-block;">
-                  Access Your Dashboard
-                </a>
+              <div style="font-size: 36px; font-weight: bold; color: #d4af37; letter-spacing: 8px; text-align: center; padding: 20px; background: #fff; border: 2px dashed #d4af37; margin: 20px 0;">
+                ${otp}
               </div>
+              <p style="color: #888; font-size: 14px; text-align: center;">This code expires in 10 minutes.</p>
+              <p style="color: #666; line-height: 1.6; margin-top: 20px;">
+                After verification, you'll need to complete your KYC (Know Your Customer) verification before you can start using our escrow services.
+              </p>
             </div>
             <div style="background: #1a1a1a; color: #888; padding: 30px; text-align: center;">
               <p style="margin: 0 0 10px 0;">Questions? Contact our support team at support@holdvera.site</p>
@@ -91,6 +89,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      requiresVerification: true,
       user: {
         id: user.id,
         email: user.email,

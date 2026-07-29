@@ -35,6 +35,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if email is verified (only for regular users)
+    if (user.role === "USER" && !user.emailVerified) {
+      return NextResponse.json({
+        error: "Email not verified",
+        requiresVerification: true,
+        email: user.email,
+      }, { status: 403 });
+    }
+
+    // Update last active
+    await db.user.update({
+      where: { id: user.id },
+      data: { lastActiveAt: new Date() },
+    });
+
     const token = jwt.sign(
       {
         userId: user.id,
@@ -54,6 +69,8 @@ export async function POST(request: NextRequest) {
         firstName: user.firstName,
         lastName: user.lastName,
         role: user.role,
+        kycStatus: user.kycStatus,
+        emailVerified: user.emailVerified,
         agentPermissions: user.agentPermissions,
         agentStatus: user.agentStatus,
       },

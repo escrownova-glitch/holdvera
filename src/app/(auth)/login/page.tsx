@@ -37,6 +37,11 @@ function LoginForm() {
       const data = await res.json();
 
       if (!res.ok) {
+        // Check if email needs verification
+        if (data.requiresVerification) {
+          router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
+          return;
+        }
         setError(data.error || "Invalid credentials");
         return;
       }
@@ -48,12 +53,17 @@ function LoginForm() {
       // Redirect based on role
       if (data.user.role === "CEO" || data.user.role === "ADMIN") {
         router.push("/admin");
+      } else if (data.user.role === "AGENT") {
+        router.push("/agent");
       } else {
         // Check for invite redirect
         const inviteRedirect = localStorage.getItem("holdvera_invite_redirect");
         if (inviteRedirect) {
           localStorage.removeItem("holdvera_invite_redirect");
           router.push(`/invite/${inviteRedirect}`);
+        } else if (data.user.kycStatus !== "APPROVED") {
+          // Redirect to KYC if not approved
+          router.push("/dashboard/kyc");
         } else {
           router.push("/dashboard");
         }
