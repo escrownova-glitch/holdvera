@@ -19,6 +19,12 @@ function LoginForm() {
     if (searchParams.get("registered") === "true") {
       setSuccessMessage("Account created successfully! Please sign in.");
     }
+    if (searchParams.get("expired") === "true") {
+      setError("Your session has expired. Please sign in again.");
+    }
+    if (searchParams.get("verified") === "true") {
+      setSuccessMessage("Email verified successfully! Please sign in.");
+    }
   }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {

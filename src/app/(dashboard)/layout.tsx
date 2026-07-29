@@ -17,7 +17,7 @@ export default function DashboardLayout({
   useSession();
 
   useEffect(() => {
-    const checkAuth = () => {
+    const checkAuth = async () => {
       const token = localStorage.getItem("holdvera_token");
       const userData = localStorage.getItem("holdvera_user");
 
@@ -26,7 +26,21 @@ export default function DashboardLayout({
         return;
       }
 
-      const user = JSON.parse(userData);
+      let user = JSON.parse(userData);
+
+      // Refresh user data from server to get latest kycStatus
+      try {
+        const res = await fetch("/api/auth/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          user = data.user;
+          localStorage.setItem("holdvera_user", JSON.stringify(user));
+        }
+      } catch {
+        // Continue with cached data if server unreachable
+      }
 
       // Enforce KYC verification (except on KYC page itself)
       if (user.role === "USER" && user.kycStatus !== "APPROVED" && !pathname?.includes("/kyc")) {

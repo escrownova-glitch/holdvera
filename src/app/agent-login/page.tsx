@@ -1,17 +1,28 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Eye, EyeOff, Lock, Mail, Users } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, Users, CheckCircle } from "lucide-react";
 
-export default function AgentLoginPage() {
+function AgentLoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("activated") === "true") {
+      setSuccess("Account activated successfully! Please sign in.");
+    }
+    if (searchParams.get("expired") === "true") {
+      setError("Your session has expired. Please sign in again.");
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,6 +113,13 @@ export default function AgentLoginPage() {
             </div>
           </div>
 
+          {success && (
+            <div className="mb-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-green-400" />
+              <p className="text-green-400 text-sm">{success}</p>
+            </div>
+          )}
+
           {error && (
             <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
               <p className="text-red-400 text-sm">{error}</p>
@@ -185,5 +203,17 @@ export default function AgentLoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function AgentLoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="animate-spin h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full" />
+      </div>
+    }>
+      <AgentLoginForm />
+    </Suspense>
   );
 }

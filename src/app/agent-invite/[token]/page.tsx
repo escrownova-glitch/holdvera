@@ -76,8 +76,8 @@ export default function AgentInvitePage() {
         return;
       }
 
-      // Store credentials and redirect to admin-login
-      router.push("/admin-login?activated=true");
+      // Redirect to agent-login (agents use separate login)
+      router.push("/agent-login?activated=true");
     } catch (err) {
       setError("Failed to activate account");
     } finally {
