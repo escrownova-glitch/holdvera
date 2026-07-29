@@ -602,6 +602,7 @@ function KYCTab() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
+  const [imageModal, setImageModal] = useState<{ url: string; title: string } | null>(null);
 
   useEffect(() => {
     fetchPendingKYC();
@@ -617,7 +618,7 @@ function KYCTab() {
     setLoading(false);
   };
 
-  const handleKYCAction = async (userId: string, action: "approve" | "reject", reason?: string) => {
+  const handleKYCAction = async (userId: string, action: "approve" | "reject" | "request_info", reason?: string) => {
     setProcessing(userId);
     const token = localStorage.getItem("holdvera_token");
 
@@ -641,28 +642,42 @@ function KYCTab() {
         <p className="text-amber-200">{users.length} users pending KYC review</p>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid gap-6">
         {users.map((u) => (
           <div key={u.id} className="bg-gray-800 rounded-xl border border-gray-700 p-6">
-            <div className="flex items-start justify-between mb-6">
+            {/* Header with user info and action buttons */}
+            <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 mb-6">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-full bg-gray-600 flex items-center justify-center text-white text-xl font-bold">
-                  {u.firstName?.[0]}
+                <div className="w-14 h-14 rounded-full bg-[var(--gold)] flex items-center justify-center text-white text-xl font-bold">
+                  {(u.kycFirstName || u.firstName)?.[0]}
                 </div>
                 <div>
-                  <h3 className="text-white font-semibold text-lg">{u.firstName} {u.lastName}</h3>
+                  <h3 className="text-white font-semibold text-lg">
+                    {u.kycFirstName || u.firstName} {u.kycMiddleName || ''} {u.kycLastName || u.lastName}
+                  </h3>
                   <p className="text-gray-400">{u.email}</p>
-                  <p className="text-gray-500 text-sm">Submitted: {new Date(u.kycSubmittedAt).toLocaleString()}</p>
+                  <p className="text-gray-500 text-sm">Submitted: {u.kycSubmittedAt ? new Date(u.kycSubmittedAt).toLocaleString() : 'N/A'}</p>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => handleKYCAction(u.id, "approve")}
                   disabled={processing === u.id}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium disabled:opacity-50"
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium disabled:opacity-50 transition-colors"
                 >
                   <CheckCircle className="w-4 h-4" />
                   Approve
+                </button>
+                <button
+                  onClick={() => {
+                    const reason = prompt("What additional information is needed?");
+                    if (reason) handleKYCAction(u.id, "request_info", reason);
+                  }}
+                  disabled={processing === u.id}
+                  className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium disabled:opacity-50 transition-colors"
+                >
+                  <AlertCircle className="w-4 h-4" />
+                  Request Info
                 </button>
                 <button
                   onClick={() => {
@@ -670,7 +685,7 @@ function KYCTab() {
                     if (reason) handleKYCAction(u.id, "reject", reason);
                   }}
                   disabled={processing === u.id}
-                  className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium disabled:opacity-50"
+                  className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium disabled:opacity-50 transition-colors"
                 >
                   <XCircle className="w-4 h-4" />
                   Reject
@@ -678,50 +693,112 @@ function KYCTab() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {/* Personal Info Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
               <div className="bg-gray-700/50 rounded-lg p-3">
-                <p className="text-gray-500 text-xs mb-1">Date of Birth</p>
-                <p className="text-white">{u.dateOfBirth || "N/A"}</p>
+                <p className="text-gray-500 text-xs mb-1">Full Name</p>
+                <p className="text-white text-sm">{u.kycFirstName || u.firstName} {u.kycMiddleName || ''} {u.kycLastName || u.lastName}</p>
               </div>
               <div className="bg-gray-700/50 rounded-lg p-3">
-                <p className="text-gray-500 text-xs mb-1">Address</p>
-                <p className="text-white text-sm">{u.address}, {u.city}, {u.state} {u.zipCode}</p>
+                <p className="text-gray-500 text-xs mb-1">Date of Birth</p>
+                <p className="text-white text-sm">{u.dateOfBirth || "N/A"}</p>
+              </div>
+              <div className="bg-gray-700/50 rounded-lg p-3">
+                <p className="text-gray-500 text-xs mb-1">Nationality</p>
+                <p className="text-white text-sm">{u.nationality || "N/A"}</p>
+              </div>
+              <div className="bg-gray-700/50 rounded-lg p-3">
+                <p className="text-gray-500 text-xs mb-1">Phone</p>
+                <p className="text-white text-sm">{u.kycPhone || u.phone || "N/A"}</p>
               </div>
               <div className="bg-gray-700/50 rounded-lg p-3">
                 <p className="text-gray-500 text-xs mb-1">ID Type</p>
-                <p className="text-white">{u.idType || "N/A"}</p>
+                <p className="text-white text-sm">{u.idType?.replace(/_/g, ' ') || "N/A"}</p>
               </div>
               <div className="bg-gray-700/50 rounded-lg p-3">
-                <p className="text-gray-500 text-xs mb-1">Signup Method</p>
-                <p className="text-white">{u.signupMethod}</p>
+                <p className="text-gray-500 text-xs mb-1">Country</p>
+                <p className="text-white text-sm">{u.country || "N/A"}</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            {/* Address */}
+            <div className="bg-gray-700/50 rounded-lg p-3 mb-6">
+              <p className="text-gray-500 text-xs mb-1">Full Address</p>
+              <p className="text-white text-sm">
+                {u.address || "N/A"}
+                {u.addressLine2 && `, ${u.addressLine2}`}
+                {u.city && `, ${u.city}`}
+                {u.state && `, ${u.state}`}
+                {u.zipCode && ` ${u.zipCode}`}
+                {u.country && `, ${u.country}`}
+              </p>
+            </div>
+
+            {/* ID Images - Click to enlarge */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <p className="text-gray-500 text-xs mb-2">ID Front</p>
+                <p className="text-gray-400 text-xs mb-2 font-medium">
+                  {u.idType === 'PASSPORT' ? 'Passport Photo Page' : 'ID Front'}
+                </p>
                 {u.idFrontUrl ? (
-                  <img src={u.idFrontUrl} alt="ID Front" className="w-full h-32 object-cover rounded-lg border border-gray-600" />
+                  <button
+                    onClick={() => setImageModal({ url: u.idFrontUrl, title: u.idType === 'PASSPORT' ? 'Passport' : 'ID Front' })}
+                    className="w-full h-40 rounded-lg border border-gray-600 overflow-hidden hover:border-[var(--gold)] transition-colors group relative"
+                  >
+                    <img src={u.idFrontUrl} alt="ID Front" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                      <Eye className="w-6 h-6 text-white" />
+                    </div>
+                  </button>
                 ) : (
-                  <div className="w-full h-32 bg-gray-700 rounded-lg flex items-center justify-center text-gray-500">No image</div>
+                  <div className="w-full h-40 bg-gray-700 rounded-lg flex items-center justify-center text-gray-500 text-sm">No image</div>
                 )}
               </div>
+              {u.idType !== 'PASSPORT' && (
+                <div>
+                  <p className="text-gray-400 text-xs mb-2 font-medium">ID Back</p>
+                  {u.idBackUrl ? (
+                    <button
+                      onClick={() => setImageModal({ url: u.idBackUrl, title: 'ID Back' })}
+                      className="w-full h-40 rounded-lg border border-gray-600 overflow-hidden hover:border-[var(--gold)] transition-colors group relative"
+                    >
+                      <img src={u.idBackUrl} alt="ID Back" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                        <Eye className="w-6 h-6 text-white" />
+                      </div>
+                    </button>
+                  ) : (
+                    <div className="w-full h-40 bg-gray-700 rounded-lg flex items-center justify-center text-gray-500 text-sm">No image</div>
+                  )}
+                </div>
+              )}
               <div>
-                <p className="text-gray-500 text-xs mb-2">ID Back</p>
-                {u.idBackUrl ? (
-                  <img src={u.idBackUrl} alt="ID Back" className="w-full h-32 object-cover rounded-lg border border-gray-600" />
-                ) : (
-                  <div className="w-full h-32 bg-gray-700 rounded-lg flex items-center justify-center text-gray-500">No image</div>
-                )}
-              </div>
-              <div>
-                <p className="text-gray-500 text-xs mb-2">Selfie with ID</p>
+                <p className="text-gray-400 text-xs mb-2 font-medium">Selfie with ID</p>
                 {u.selfieUrl ? (
-                  <img src={u.selfieUrl} alt="Selfie" className="w-full h-32 object-cover rounded-lg border border-gray-600" />
+                  <button
+                    onClick={() => setImageModal({ url: u.selfieUrl, title: 'Selfie with ID' })}
+                    className="w-full h-40 rounded-lg border border-gray-600 overflow-hidden hover:border-[var(--gold)] transition-colors group relative"
+                  >
+                    <img src={u.selfieUrl} alt="Selfie" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                      <Eye className="w-6 h-6 text-white" />
+                    </div>
+                  </button>
                 ) : (
-                  <div className="w-full h-32 bg-gray-700 rounded-lg flex items-center justify-center text-gray-500">No image</div>
+                  <div className="w-full h-40 bg-gray-700 rounded-lg flex items-center justify-center text-gray-500 text-sm">No image</div>
                 )}
               </div>
+            </div>
+
+            {/* View Full Details Link */}
+            <div className="mt-4 pt-4 border-t border-gray-700">
+              <Link
+                href={`/admin/users/${u.id}`}
+                className="text-[var(--gold)] hover:underline text-sm flex items-center gap-1"
+              >
+                <Eye className="w-4 h-4" />
+                View Full User Profile
+              </Link>
             </div>
           </div>
         ))}
@@ -734,6 +811,32 @@ function KYCTab() {
           </div>
         )}
       </div>
+
+      {/* Image Modal */}
+      {imageModal && (
+        <div
+          className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4"
+          onClick={() => setImageModal(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh] w-full">
+            <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 bg-gradient-to-b from-black/80 to-transparent">
+              <h3 className="text-white font-medium">{imageModal.title}</h3>
+              <button
+                onClick={() => setImageModal(null)}
+                className="text-white hover:text-gray-300 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            <img
+              src={imageModal.url}
+              alt={imageModal.title}
+              className="w-full h-auto max-h-[90vh] object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
