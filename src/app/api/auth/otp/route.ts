@@ -52,11 +52,12 @@ export async function POST(request: NextRequest) {
     });
 
     // Send OTP email
-    const purposeText = {
+    const purposeMap: Record<string, string> = {
       'verify': 'verify your email address',
       'password-reset': 'reset your password',
       'password-change': 'change your password',
-    }[purpose] || 'complete your request';
+    };
+    const purposeText = purposeMap[purpose as string] || 'complete your request';
 
     await sendEmail({
       to: email,
