@@ -19,6 +19,34 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  // Signup tracking
+  signupMethod  String    @default("WEBSITE")  // WEBSITE, INVITE
+  invitedBy     String?   // Transaction ID if joined via invite
+  ipAddress     String?
+  userAgent     String?
+
+  // KYC fields
+  kycStatus     String    @default("PENDING")  // PENDING, SUBMITTED, APPROVED, REJECTED
+  kycSubmittedAt DateTime?
+  kycReviewedAt DateTime?
+  kycReviewedBy String?
+  kycRejectReason String?
+
+  // KYC personal info
+  dateOfBirth   String?
+  ssn           String?   // Encrypted
+  address       String?
+  city          String?
+  state         String?
+  zipCode       String?
+  country       String?   @default("USA")
+
+  // KYC documents
+  idFrontUrl    String?
+  idBackUrl     String?
+  selfieUrl     String?
+  idType        String?   // DRIVERS_LICENSE, PASSPORT, STATE_ID
+
   createdTransactions     Transaction[] @relation("CreatedTransactions")
   counterpartyTransactions Transaction[] @relation("CounterpartyTransactions")
   sentMessages            Message[] @relation("SentMessages")
@@ -52,6 +80,14 @@ model Transaction {
   inviteToken     String    @unique @default(cuid())
   inviteAccepted  Boolean   @default(false)
   inviteAcceptedAt DateTime?
+
+  // Admin controls
+  adminNotes      String?
+  cancelledAt     DateTime?
+  cancelledBy     String?
+  cancelReason    String?
+  completedAt     DateTime?
+  completedBy     String?
 
   // Legacy fields
   buyerId         String?

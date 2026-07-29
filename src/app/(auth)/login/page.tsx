@@ -45,7 +45,19 @@ function LoginForm() {
       localStorage.setItem("holdvera_user", JSON.stringify(data.user));
       localStorage.setItem("holdvera_token", data.token);
 
-      router.push("/dashboard");
+      // Redirect based on role
+      if (data.user.role === "CEO" || data.user.role === "ADMIN") {
+        router.push("/admin");
+      } else {
+        // Check for invite redirect
+        const inviteRedirect = localStorage.getItem("holdvera_invite_redirect");
+        if (inviteRedirect) {
+          localStorage.removeItem("holdvera_invite_redirect");
+          router.push(`/invite/${inviteRedirect}`);
+        } else {
+          router.push("/dashboard");
+        }
+      }
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
