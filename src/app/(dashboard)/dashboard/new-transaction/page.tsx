@@ -18,7 +18,10 @@ import {
   FileCheck,
   Shield,
   Check,
-  AlertCircle
+  AlertCircle,
+  Upload,
+  X,
+  ImageIcon
 } from "lucide-react";
 
 interface UserData {
@@ -46,6 +49,28 @@ export default function NewTransactionPage() {
     inspectionDays: "3",
     terms: ""
   });
+  const [images, setImages] = useState<string[]>([]);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach(file => {
+      if (images.length >= 6) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setImages(prev => [...prev, event.target!.result as string].slice(0, 6));
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
+  };
 
   const handleCreateEscrow = async () => {
     setSubmitting(true);
@@ -60,6 +85,7 @@ export default function NewTransactionPage() {
     const transaction = {
       id: txId,
       ...formData,
+      images,
       status: "pending_acceptance",
       createdAt: new Date().toISOString(),
       createdBy: user?.email
@@ -337,6 +363,60 @@ export default function NewTransactionPage() {
                       />
                     </div>
                   </div>
+
+                  {/* Property Images */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Property Images <span className="text-red-500">*</span>
+                    </label>
+                    <p className="text-sm text-gray-500 mb-3">
+                      Upload at least 2 photos of the property (max 6). Clear images help build trust.
+                    </p>
+
+                    {/* Image Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
+                      {images.map((img, index) => (
+                        <div key={index} className="relative aspect-video rounded-lg overflow-hidden border border-gray-200 group">
+                          <img src={img} alt={`Property ${index + 1}`} className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+
+                      {/* Upload Button */}
+                      {images.length < 6 && (
+                        <label className="aspect-video rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-[var(--gold)] hover:bg-[var(--gold)]/5 transition-colors">
+                          <Upload className="w-6 h-6 text-gray-400 mb-2" />
+                          <span className="text-sm text-gray-500">Add Photo</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={handleImageUpload}
+                            className="hidden"
+                          />
+                        </label>
+                      )}
+                    </div>
+
+                    {/* Image Count Indicator */}
+                    <div className="flex items-center gap-2">
+                      <div className={`flex items-center gap-1.5 text-sm ${images.length >= 2 ? "text-green-600" : "text-amber-600"}`}>
+                        {images.length >= 2 ? (
+                          <Check className="w-4 h-4" />
+                        ) : (
+                          <AlertCircle className="w-4 h-4" />
+                        )}
+                        <span>{images.length}/6 photos uploaded</span>
+                        {images.length < 2 && <span className="text-amber-600">(minimum 2 required)</span>}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -436,6 +516,19 @@ export default function NewTransactionPage() {
                     <p className="text-sm text-gray-600 mt-1">{formData.description || "No description"}</p>
                   </div>
 
+                  {/* Property Images Preview */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h3 className="text-sm font-medium text-gray-500 mb-3">Property Images</h3>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      {images.map((img, index) => (
+                        <div key={index} className="aspect-video rounded-lg overflow-hidden border border-gray-200">
+                          <img src={img} alt={`Property ${index + 1}`} className="w-full h-full object-cover" />
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-sm text-gray-500 mt-2">{images.length} photo{images.length !== 1 ? "s" : ""} attached</p>
+                  </div>
+
                   <div className="bg-gray-50 rounded-lg p-4">
                     <h3 className="text-sm font-medium text-gray-500 mb-2">Counterparty</h3>
                     <p className="font-semibold text-gray-900">{formData.counterpartyName || "Not specified"}</p>
@@ -484,7 +577,8 @@ export default function NewTransactionPage() {
                 {step < 4 ? (
                   <button
                     onClick={() => setStep(Math.min(4, step + 1))}
-                    className="flex items-center gap-2 btn-gold px-6 py-2.5"
+                    disabled={step === 2 && images.length < 2}
+                    className={`flex items-center gap-2 btn-gold px-6 py-2.5 ${step === 2 && images.length < 2 ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
                     Continue
                     <ArrowRight className="w-4 h-4" />
