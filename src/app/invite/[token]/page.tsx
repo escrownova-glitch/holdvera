@@ -44,6 +44,8 @@ export default function InvitePage() {
   const [error, setError] = useState<string | null>(null);
   const [accepting, setAccepting] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [requiresKYC, setRequiresKYC] = useState(false);
+  const [kycStatus, setKycStatus] = useState<string | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("holdvera_token");
@@ -78,6 +80,9 @@ export default function InvitePage() {
     }
 
     setAccepting(true);
+    setError(null);
+    setRequiresKYC(false);
+
     try {
       const token = localStorage.getItem("holdvera_token");
       const res = await fetch(`/api/invite/${params.token}/accept`, {
@@ -90,11 +95,20 @@ export default function InvitePage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Failed to accept invitation");
+        if (data.requiresKYC) {
+          setRequiresKYC(true);
+          setKycStatus(data.kycStatus);
+          // Save invite for after KYC
+          localStorage.setItem("holdvera_invite_redirect", params.token as string);
+        } else {
+          setError(data.error || "Failed to accept invitation");
+        }
         return;
       }
 
-      router.push(`/dashboard/transactions/${transaction?.id}`);
+      // Clear the invite redirect since it's been used
+      localStorage.removeItem("holdvera_invite_redirect");
+      router.push(`/dashboard/transactions/${data.transactionId}`);
     } catch (err) {
       setError("Failed to accept invitation");
     } finally {
@@ -264,28 +278,56 @@ export default function InvitePage() {
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button
-                onClick={handleAccept}
-                disabled={accepting}
-                className="flex-1 btn-gold py-4 text-lg flex items-center justify-center gap-2"
-              >
-                {accepting ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="w-5 h-5" />
-                    {isLoggedIn ? "Accept & Join Transaction" : "Create Account to Accept"}
-                  </>
-                )}
-              </button>
-            </div>
+            {/* KYC Required Notice */}
+            {requiresKYC && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 mb-6">
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0">
+                    <AlertCircle className="w-6 h-6 text-amber-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-amber-900 mb-1">Identity Verification Required</h4>
+                    <p className="text-amber-700 text-sm mb-3">
+                      {kycStatus === "PENDING" && "You need to complete identity verification before joining this transaction."}
+                      {kycStatus === "SUBMITTED" && "Your identity verification is under review. You can accept this transaction once approved."}
+                      {kycStatus === "REJECTED" && "Your identity verification was declined. Please resubmit your documents."}
+                    </p>
+                    <Link
+                      href="/dashboard/kyc"
+                      className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg font-medium text-sm"
+                    >
+                      {kycStatus === "SUBMITTED" ? "Check Status" : "Complete Verification"}
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
 
-            {!isLoggedIn && (
+            {/* Action Buttons */}
+            {!requiresKYC && (
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button
+                  onClick={handleAccept}
+                  disabled={accepting}
+                  className="flex-1 btn-gold py-4 text-lg flex items-center justify-center gap-2"
+                >
+                  {accepting ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-5 h-5" />
+                      {isLoggedIn ? "Accept & Join Transaction" : "Create Account to Accept"}
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+
+            {!isLoggedIn && !requiresKYC && (
               <p className="text-center text-sm text-gray-500 mt-4">
                 Already have an account?{" "}
                 <Link href={`/login?redirect=/invite/${params.token}`} className="text-[var(--gold)] font-medium hover:underline">

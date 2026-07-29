@@ -89,17 +89,10 @@ function VerifyEmailForm() {
       localStorage.setItem("holdvera_token", data.token);
       localStorage.setItem("holdvera_user", JSON.stringify(data.user));
 
-      // Check for pending invite redirect
-      const inviteRedirect = localStorage.getItem("holdvera_invite_redirect");
-
-      // Redirect after 2 seconds
+      // Always go to KYC first - the invite redirect will be handled after KYC
+      // The invite token stays in localStorage until used
       setTimeout(() => {
-        if (inviteRedirect) {
-          // Keep the invite token, go to invite page (it will handle accept flow)
-          router.push(`/invite/${inviteRedirect}`);
-        } else {
-          router.push("/dashboard/kyc");
-        }
+        router.push("/dashboard/kyc");
       }, 2000);
     } catch {
       setError("Verification failed. Please try again.");

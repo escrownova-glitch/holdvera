@@ -66,6 +66,18 @@ export async function POST(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    // Check KYC status - must be approved to accept transactions
+    if (acceptingUser.kycStatus !== 'APPROVED') {
+      return NextResponse.json(
+        {
+          error: 'KYC verification required',
+          requiresKYC: true,
+          kycStatus: acceptingUser.kycStatus,
+        },
+        { status: 403 }
+      );
+    }
+
     // Update transaction
     const updatedTransaction = await prisma.transaction.update({
       where: { id: transaction.id },

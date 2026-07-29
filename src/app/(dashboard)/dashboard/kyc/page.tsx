@@ -267,7 +267,8 @@ export default function KYCPage() {
 
   const renderStatus = () => {
     switch (kycData?.kycStatus) {
-      case "APPROVED":
+      case "APPROVED": {
+        const pendingInvite = typeof window !== "undefined" ? localStorage.getItem("holdvera_invite_redirect") : null;
         return (
           <div className="text-center py-12">
             <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -275,11 +276,23 @@ export default function KYCPage() {
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Verified!</h2>
             <p className="text-gray-500 mb-6">Your identity has been verified. You have full access to all features.</p>
-            <Link href="/dashboard" className="btn-gold px-6 py-2.5">
-              Go to Dashboard
-            </Link>
+            {pendingInvite ? (
+              <div className="space-y-3">
+                <Link href={`/invite/${pendingInvite}`} className="btn-gold px-6 py-2.5 inline-block">
+                  Continue to Pending Invitation
+                </Link>
+                <p className="text-sm text-gray-400">
+                  Or <Link href="/dashboard" className="text-[var(--gold)] hover:underline">go to dashboard</Link>
+                </p>
+              </div>
+            ) : (
+              <Link href="/dashboard" className="btn-gold px-6 py-2.5">
+                Go to Dashboard
+              </Link>
+            )}
           </div>
         );
+      }
 
       case "SUBMITTED":
         return (
